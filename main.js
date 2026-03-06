@@ -47,6 +47,7 @@ let isVertical = true;
 let isCmtOpen = false;
 let openSpMenuStyle = "add new";
 let oldSrc = '';
+let loadNewImg = false;
 const tokenKey = 'userToken-SuhaoApp';
 let token = localStorage.getItem(tokenKey);
 let userDict = {};
@@ -458,20 +459,19 @@ addSpInput.addEventListener('change', () => {
         openLoadingBar();
 
         try {
-            const imgId = new Date().getTime();
             setLoadingBarValue(50, 'Đang tải ảnh... ');
-            
             // [ĐÃ SỬA]: Dùng finalImageUrl thay cho img
             if (finalImageUrl && finalImageUrl.startsWith('data:image')) {
                 
                 // 2. Upload ảnh thật lên Drive
-                const driveUrl = await uploadImageToDrive(finalImageUrl, `${imgId}.jpg`);
+                const driveUrl = await uploadImageToDrive(finalImageUrl, file.name);
                 setLoadingBarValue(99, 'Đang tải ảnh... ');
                 
                 // 3. Cập nhật lại khung ảnh bằng link thật từ Drive
                 const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
                 addSpImgBox.src = `https://lh3.googleusercontent.com/u/0/d/${fileIdMatch[0]}=s400`;
                 closeLoadingBar();
+                loadNewImg = true;
             }
         } catch (error) {
             console.error('Lỗi khi upload/xóa hình ảnh:', error.message);
@@ -669,13 +669,15 @@ async function init() {
 
     addSpMenuCloseBtn.addEventListener('click', async () => {
         addSpMenu.style.display = 'none';
-        if (addSpImgBox.src && addSpImgBox.src !== 'icon/image.png' && addSpImgBox.src !== oldSrc) {
-            const oldFileIdMatch = addSpImgBox.src.match(/[-\w]{25,}/);
+        // if (addSpImgBox.src && addSpImgBox.src !== 'icon/image.png' && loadNewImg === true) {
+        //     const oldFileIdMatch = addSpImgBox.src.match(/[-\w]{25,}/);
             
-            if (oldFileIdMatch) {
-                await deleteImageFromDrive(oldFileIdMatch[0]);
-            }
-        }
+        //     if (oldFileIdMatch) {
+        //         await deleteImageFromDrive(oldFileIdMatch[0]);
+        //         console.log("Đang xóa ảnh cũ trên Drive:", oldFileIdMatch[0]);
+        //         loadNewImg = false;
+        //     }
+        // }
     });
 
     addSpMenuAddBtn.addEventListener('click', () => {
@@ -778,14 +780,15 @@ async function init() {
             debouncedSaveSheet();
         }
 
-        if (oldSrc && oldSrc !== 'icon/image.png' && oldSrc !== '' && oldSrc !== addSpImgBox.src) {
-            const oldFileIdMatch = oldSrc.match(/[-\w]{25,}/);
+        // if (oldSrc && oldSrc !== 'icon/image.png' && oldSrc !== '' && oldSrc !== addSpImgBox.src && loadNewImg === true) {
+        //     const oldFileIdMatch = oldSrc.match(/[-\w]{25,}/);
             
-            if (oldFileIdMatch) {
-                console.log("Đang xóa ảnh cũ trên Drive:", oldFileIdMatch[0]);
-                await deleteImageFromDrive(oldFileIdMatch[0]);
-            }
-        }
+        //     if (oldFileIdMatch) {
+        //         console.log("Đang xóa ảnh cũ trên Drive:", oldFileIdMatch[0]);
+        //         await deleteImageFromDrive(oldFileIdMatch[0]);
+        //         loadNewImg = false;
+        //     }
+        // }
     })
 
     // 1. Tạo một mảng tạm để chứa dữ liệu
