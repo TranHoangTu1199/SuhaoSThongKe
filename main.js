@@ -516,11 +516,15 @@ cmdBtnItem.addEventListener('click', () => {
 // Thêm async vào đây
 async function init() {
     resizeEvent();
+    openLoadingBar();
+    setLoadingBarValue(0, 'Đang tạo cơ sở dữ liệu... ');
     const sheetData = new LoadDataForDict(scriptURL, "Sheet1");
     await sheetData.init();
+    setLoadingBarValue(10, 'Đọc cơ sở dữ liệu... ');
 
     const setupData = new LoadDataForDict(scriptURL, "Setup");
     await setupData.init();
+    setLoadingBarValue(20, 'Đọc cơ sở dữ liệu... ');
 
     const debouncedSave = debounce(() => setupData.save(), 1000);
     const debouncedSaveSheet = debounce(() => sheetData.save(), 1000);
@@ -803,9 +807,12 @@ async function init() {
     });
 
     // 4. Lặp qua mảng đã sắp xếp để in ra màn hình
-    tempItems.forEach(obj => {
+    const maxload = 80 / tempItems.length;
+    tempItems.forEach((obj, index) => {
         addMainItem(obj.id, obj.itemData, sheetData, setupData);
+        setLoadingBarValue(parseInt((index + 1) * maxload + 20), 'Truyền dữ liệu... ');
     });
+    closeLoadingBar();
 }
 
 document.addEventListener('DOMContentLoaded', init);
