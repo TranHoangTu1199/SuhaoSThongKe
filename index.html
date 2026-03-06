@@ -4,92 +4,120 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>THỐNG KÊ HÀNG HÓA</title>
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="main.css">
 </head>
 <body>
-    <header>
-        <div class="logo"></div>
-        <div class="reloadBtn"></div>
-        <input type="text" name="" id="" class="searchBox" placeholder="Nhập tên hoặc mã hàng">
-    </header>
-    
-    <div class="main">
-        <div class="sidebar">
-            <div style="padding: 7px; font-weight: bolder; background-color: rgb(255, 255, 255); text-align: center; border-radius: 10px 10px 0 0;"> Lọc </div>
-            <div class="once-line" style="margin: 0; width: 100%;"></div>
-            <div style="padding: 7px; padding-top: 15px;">
-                <b>Tháng:</b>
-                <select name="dog-month" class="dog-month">
-                    <option value="01">01</option>
-                    <option value="02">02</option>
-                    <option value="03">03</option>
-                    <option value="04">04</option>
-                    <option value="05">05</option>
-                    <option value="06">06</option>
-                    <option value="07">07</option>
-                    <option value="08">08</option>
-                    <option value="09">09</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                    <option value="12">12</option>
-                </select>
-                <b>Năm:</b>
-                <select name="dog-year" class="dog-year"></select>
-                <label class="edit">edit</label>
+    <div id="app">
+        <div id="header">
+            <div id="header-icon"></div>
+            <input type="text" id="search-input" placeholder="Tìm kiếm...">
+        </div>
+        <div id="main"></div>
+    </div>
+    <div id="btn-menu">
+        <div class="add-btn-item"></div>
+        <div class="setup-btn-item"></div>
+        <div class="cmd-btn-item"></div>
+    </div>
+    <div id="setupPanel">
+        <div id="date-setup">
+            Tháng:
+            <select name="month" id="month-setup">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+            </select>
+            Năm:
+            <select name="year" id="year-setup"></select>
+            <div class="editBtn">edit</div>
+        </div>
+        <div class="slide"></div>
+        <div id="styles-setup">
+            Loại:
+            <div class="checked-styles-setup">
+                <input type="checkbox" name="boloc" id="checkbox-style-all">
+                <label for="checkbox-style-all">Tất cả</label>
             </div>
-            <div class="once-line"></div>
-            <div class="shirts"><b>Loại</b></div>
-            <div class="edit" style="margin-left: calc(var(--sidebar-size) - 60px);">edit</div>
-            <div class="once-line"></div>
-            <div class="actor"><b>Shop</b></div>
-            <div class="edit" style="margin-left: calc(var(--sidebar-size) - 60px);">edit</div>
-            <div class="once-line"></div>
-            <div style="margin-left: 15px;"><input type="checkbox" class="boLocCheck"> <label for="" class="boLoc">Bật chọn lọc</label></div>
+            <div id="styles-setup-content"></div>
+            <div class="editBtn">edit</div>
         </div>
-        <div class="buttonBox">
-            <div class="addBtn"></div>
-            <div class="sideBtn"></div>
-        </div>
-        <div class="mylist"></div>
-        <div class="editBox">
-            <div class="editlist"></div>
-            <input type="button" value="Add" class="editBoxBtn" style="width: 50px; margin-left: 10px;">
-            <input type="button" value="Apply" class="editBoxBtn" style="margin-left: calc(var(--edit-box-width) - 220px)">
-            <input type="button" value="Cancel" class="editBoxBtn">
-        </div>
-        <div class="addShirtBox">
-            <div class="addShirtTypeBox">
-                <img src="icon/image.png" alt="" class="addImage">
-                <div class="addImageBtn"><input type="file" name="file-input" id="image-input" accept="image/*"></div>
-                <div style="width: 100%; margin-top: 25px; display: inline-block;">
-                    <label for="" style="user-select: none;">Name: </label>
-                    <input type="text" name="" id="" class="addBoxType">
-                </div>
-                <div style="width: 100%; display: inline-block; margin-bottom: 20px; margin-top: 20px;">
-                    <label for="" style="user-select: none;">Size: </label>
-                    <input type="text" name="" id="" class="addBoxType" style="width: 170px;">
-                    <label for="" style="user-select: none;">Mã: #</label>
-                    <input type="number" name="" id="" class="addBoxType" style="width: 55px;" value="0">
-                </div>
-                <div style="width: 100%; display: inline-block; margin-bottom: 20px; margin-top: 0px; user-select: none;">
-                    <label for="">Ngày: </label>
-                    <select name="" id="" class="addShirtSelect"></select>/
-                    <select name="" id="" class="addShirtSelect"></select>/
-                    <select name="" id="" class="addShirtSelect"></select>
-                </div>
-                <div style="width: 100%; display: inline-block; margin-bottom: 20px; margin-top: 0px; user-select: none;">
-                    <label for="">Actor: </label>
-                    <select name="" id="" class="addShirtSelect" style="width: 24%;"></select>
-                    <label for=""> Shirt: </label>
-                    <select name="" id="" class="addShirtSelect" style="width: 43%;"></select>
-                </div>
-                <div class="addColors"></div>
+        <div class="slide"></div>
+        <div id="fashions-setup">
+            Shops:
+            <div class="checked-fashions-setup">
+                <input type="checkbox" name="boloc" id="checkbox-fashion-all">
+                <label for="checkbox-fashion-all">Tất cả</label>
             </div>
-            <input type="button" value="Add" class="addShirtBtn">
-            <input type="button" value="Apply" class="addShirtBtn" style="margin-left: calc(100% - 180px);">
-            <input type="button" value="Cancel" class="addShirtBtn">
+            <div id="fashions-setup-content"></div>
+            <div class="editBtn">edit</div>
+        </div>
+        <div class="slide"></div>
+        <div id="checked-setup">
+            <input type="checkbox" name="boloc" id="checkbox-boloc">
+            <label for="checkbox-boloc">Bật bộ lọc</label>
         </div>
     </div>
-    <script type="text/javascript" src="index.js"></script>
+    <div id="cmdPanel"></div>
+    <div id="editMenu">
+        <div id="edit-menu-contents"></div>
+        <div id="edit-menu-btns">
+            <div id="edit-menu-btn-add">Add</div>
+            <div id="edit-menu-btn-apply">Apply</div>
+            <div id="edit-menu-btn-close">Close</div>
+        </div>
+    </div>
+    <div id="addSpMenu">
+        <div id="add-sp-menu-content">
+            <img src="icon/image.png" alt="" id="add-sp-image-box">
+            <input type="file" id="add-sp-image-input" accept="image/*" style="display: none;">
+            <div>
+                Tên:
+                <input type="text" id="add-sp-name-input" style="flex: 1;">
+            </div>
+            <div>
+                Size:
+                <input type="text" id="add-sp-size-input" style="width: 42%;">
+                Mã: #
+                <input type="number" id="add-sp-code-input" style="width: 17%;" value="0">
+            </div>
+            <div>
+                Ngày:
+                <input type="date" id="add-sp-date-input" style="width: 100%;">
+            </div>
+            <div>
+                Hiệu:
+                <select name="actor" id="add-sp-actor-input" style="flex: 1;"></select>
+                Kiểu:
+                <select name="group" id="add-sp-group-input" style="flex: 1;"></select>
+            </div>
+            <div class="add-sp-item">
+                <input type="text" placeholder="Màu ..." style="flex: 1;">:
+                <input type="number" placeholder="Số lượng ..." value="0" style="width: 20%;">
+            </div>
+            <div id="add-sp-items" style="margin-top: 0;"></div>
+            <div style="width: 100%; height: 40%; color: transparent;">.</div>
+        </div>
+        <div id="add-sp-btns">
+            <div id="sp-btn-add">Thêm</div>
+            <div id="sp-btn-apply">Xác nhận</div>
+            <div id="sp-btn-close">Đóng</div>
+        </div>
+    </div>
+    <div id="loading">
+        <div id="loading-bar">
+            <div id="loading-bar-fill"></div>
+        </div>
+        <span id="loading-text">100%</span>
+    </div>
+    <script type="module" src="main.js"></script> 
 </body>
 </html>
