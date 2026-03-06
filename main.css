@@ -359,7 +359,7 @@ select {
     transform: translate(-50%, -50%);
     background-color: #ffffff;
     width: var(--panel-size);
-    height: calc(var(--panel-size) * 1.1);
+    height: var(--sp-menu-size);
     border-radius: var(--border-radius);
     display: none;
     align-items: center;
@@ -380,6 +380,7 @@ select {
     align-content: center;
     padding: calc(var(--panel-size) * 0.02);
     width: 100%;
+    flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
 }

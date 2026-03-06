@@ -365,9 +365,11 @@ function resizeEvent() {
     if (isVertical) {
         const panelSize = window.innerWidth;
         document.documentElement.style.setProperty('--panel-size', `${panelSize}px`);
+        document.documentElement.style.setProperty('--sp-menu-size', '100%');
     } else {
         const panelSize = window.innerWidth * 0.35;
         document.documentElement.style.setProperty('--panel-size', `${panelSize}px`);
+        document.documentElement.style.setProperty('--sp-menu-size', 'calc(var(--panel-size) * 1.2)');
     }
 
     mainPanel.querySelectorAll('.main-item').forEach(item => {
