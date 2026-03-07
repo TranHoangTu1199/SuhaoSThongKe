@@ -6,6 +6,8 @@ document.documentElement.style.setProperty('--init-width', `${initWidth}px`);
 document.documentElement.style.setProperty('--init-height', `${initHeight}px`);
 
 const scriptURL = 'https://script.google.com/macros/s/AKfycbxqzCDnwjefL0MuPdOulqvOUNffSOjAmQgotTa-cdXejZ_8u1o2P-GjOo3lV6s7NJjoyQ/exec';
+const imageDict = new LoadDataForDict(scriptURL, "Image");
+imageDict.init();
 
 const addBtnItem = document.querySelector('.add-btn-item');
 const setupBtnItem = document.querySelector('.setup-btn-item');
@@ -84,6 +86,65 @@ function debounce(func, timeout = 500) {
             func.apply(this, args);
         }, timeout);
     };
+}
+
+// Tạo một Object để lưu trữ các interval ID
+const activeTimers = {};
+
+/**
+ * Bắt đầu chạy lặp lại một hàm
+ * @param {Function} func - Hàm cần chạy
+ * @param {number} time - Thời gian lặp lại (milliseconds)
+ * @param {string|number} id - Mã định danh để quản lý
+ */
+function playRunForTime(func, time, id) {
+    // Kiểm tra xem ID này đã được chạy trước đó chưa để tránh việc tạo ra nhiều vòng lặp trùng lặp
+    if (activeTimers[id]) {
+        console.warn(`Hàm với ID '${id}' đang hoạt động rồi!`);
+        return;
+    }
+
+    // Sử dụng setInterval và lưu ID của bộ đếm vào Object
+    activeTimers[id] = setInterval(func, time);
+    console.log(`Đã bắt đầu chạy hàm với ID '${id}'.`);
+}
+
+/**
+ * Dừng chạy hàm
+ * @param {string|number} id - Mã định danh của hàm cần dừng
+ */
+function stopRunForTime(id) {
+    // Kiểm tra xem ID có tồn tại trong danh sách đang chạy không
+    if (activeTimers[id]) {
+        clearInterval(activeTimers[id]); // Xóa vòng lặp
+        delete activeTimers[id];         // Xóa khỏi bộ nhớ lưu trữ
+        console.log(`Đã dừng hàm với ID '${id}'.`);
+    } else {
+        console.warn(`Không tìm thấy hàm nào đang chạy với ID '${id}'.`);
+    }
+}
+/**
+ * Chạy lặp lại một hàm theo số lần chỉ định rồi tự dừng
+ * @param {Function} func - Hàm cần chạy
+ * @param {number} time - Thời gian lặp lại (milliseconds)
+ * @param {number} loop - Số lần lặp lại
+ */
+function playRunForTimeToLoop(func, time, loop) {
+    // Nếu số lần lặp <= 0 thì không làm gì cả
+    if (loop <= 0) return;
+
+    let count = 0; // Biến đếm số lần đã chạy
+
+    // Bắt đầu vòng lặp và lưu ID của nó (cục bộ)
+    const intervalId = setInterval(() => {
+        func(count, loop);  // Thực thi hàm
+        count++; // Tăng biến đếm lên 1
+
+        // Kiểm tra nếu đã chạy đủ số vòng lặp
+        if (count >= loop) {
+            clearInterval(intervalId);
+        }
+    }, time);
 }
 
 function openLoadingBar() {
@@ -459,13 +520,15 @@ addSpInput.addEventListener('change', () => {
         openLoadingBar();
 
         try {
-            setLoadingBarValue(50, 'Đang tải ảnh... ');
+            playRunForTimeToLoop((count) => {
+                setLoadingBarValue(count, 'Đang tải ảnh... ');
+            }, 100, 100);
             // [ĐÃ SỬA]: Dùng finalImageUrl thay cho img
             if (finalImageUrl && finalImageUrl.startsWith('data:image')) {
                 
                 // 2. Upload ảnh thật lên Drive
                 const driveUrl = await uploadImageToDrive(finalImageUrl, file.name);
-                setLoadingBarValue(99, 'Đang tải ảnh... ');
+                setLoadingBarValue(100, 'Đang tải ảnh... ');
                 
                 // 3. Cập nhật lại khung ảnh bằng link thật từ Drive
                 const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
@@ -518,13 +581,14 @@ async function init() {
     resizeEvent();
     openLoadingBar();
     setLoadingBarValue(0, 'Đang tạo cơ sở dữ liệu... ');
+    playRunForTimeToLoop((count) => {
+        setLoadingBarValue(count * 2, 'Đọc cơ sở dữ liệu... ');
+    }, 300, 25);
     const sheetData = new LoadDataForDict(scriptURL, "Sheet1");
     await sheetData.init();
-    setLoadingBarValue(10, 'Đọc cơ sở dữ liệu... ');
 
     const setupData = new LoadDataForDict(scriptURL, "Setup");
     await setupData.init();
-    setLoadingBarValue(20, 'Đọc cơ sở dữ liệu... ');
 
     const debouncedSave = debounce(() => setupData.save(), 1000);
     const debouncedSaveSheet = debounce(() => sheetData.save(), 1000);
@@ -810,11 +874,12 @@ async function init() {
     });
 
     // 4. Lặp qua mảng đã sắp xếp để in ra màn hình
-    const maxload = 80 / tempItems.length;
+    const maxload = 50 / tempItems.length;
     tempItems.forEach((obj, index) => {
         addMainItem(obj.id, obj.itemData, sheetData, setupData);
-        setLoadingBarValue(parseInt((index + 1) * maxload + 20), 'Truyền dữ liệu... ');
+        setLoadingBarValue(parseInt((index + 1) * maxload + 50), 'Truyền dữ liệu... ');
     });
+
     closeLoadingBar();
 }
 

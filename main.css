@@ -23,6 +23,7 @@ body {
     box-sizing: border-box;
     padding: 0;
     margin: 0;
+    scrollbar-width: thin;
 }
 
 select {
@@ -678,8 +679,9 @@ select {
 }
 
 #loading-bar-fill {
-    width: 50%;
+    width: 0;
     height: 100%;
+    transition: 0.5s;
     background-color: #55f9ff;
 }
 
@@ -752,4 +754,42 @@ select {
 
 .main-item-rep-btn:hover {
     background-color: rgb(127, 246, 255);
+}
+
+#image-input-bar {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    width: var(--panel-size);
+    height: var(--sp-menu-size);
+    border-radius: var(--border-radius);
+    display: none;
+    align-items: center;
+    justify-content: top;
+    align-content: center;
+    flex-direction: column;
+    box-sizing: border-box;
+    z-index: 100;
+    overflow: hidden;
+    box-shadow: #000000 0px 0px calc(var(--panel-size) * 0.025) 0px;
+}
+
+#image-input-bar-contents {
+    flex: 1;
+    width: 100%;
+    background-color: #eeeeee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#image-input-bar-btns {
+    width: 100%;
+    height: calc(var(--panel-size) * 0.09);
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
 }
