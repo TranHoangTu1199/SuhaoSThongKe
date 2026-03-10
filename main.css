@@ -1,6 +1,6 @@
 :root {
     --btn-icon-size: calc(var(--panel-size) * 0.03);
-    --header-height: calc(var(--panel-size) * 0.09);
+    --header-height: calc(var(--panel-size) * 0.089);
     --panel-height: calc(100% - var(--header-height) - var(--panel-size) * 0.01);
     --panel-width: calc(var(--panel-size) - 4.4vh);
     --border-radius: calc(var(--panel-size) * 0.012);
@@ -17,6 +17,7 @@ body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 * {

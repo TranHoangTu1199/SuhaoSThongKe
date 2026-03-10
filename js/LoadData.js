@@ -105,6 +105,9 @@ export class LoadDataForDict {
         this.data = {};
         this.URL = URL;
         this.page = page;
+        this.oldData = null;
+        this.activeTimers = {};
+        this.saving = false;
     }
 
     async init() {
@@ -117,8 +120,10 @@ export class LoadDataForDict {
     }
 
     async save() {
+        this.saving = true;
         const dataArray = Object.entries(this.data);
         await SetData(dataArray, this.URL, this.page);
+        this.saving = false;
     }
 
     remove(key) {
@@ -171,6 +176,47 @@ export class LoadDataForDict {
         for (const [key, value] of Object.entries(this.data)) {
             callback(key, value);
         }
+    }
+
+    addChangeSheetCallback(key, callback, timeout = 500) {
+        if (this.activeTimers[key]) return; 
+        
+        this.activeTimers[key] = true;
+
+        const poll = async () => {
+            // Nếu bị stop hoàn toàn thì mới thoát hàm
+            if (!this.activeTimers[key]) return;
+
+            // SỬA LỖI 1: Nếu đang lưu (saving) thì KHÔNG return, chỉ BỎ QUA đoạn lấy dữ liệu
+            if (!this.saving) { 
+                try {
+                    const data = await GetData(this.URL, this.page);
+                    const newData = Object.fromEntries(data);
+                    const newDataString = JSON.stringify(newData);
+
+                    // Xử lý lần gọi đầu tiên
+                    if (this.oldData === null) {
+                        this.oldData = newDataString;
+                        this.data = newData; 
+                    } 
+                    // Xử lý khi có thay đổi thực sự
+                    else if (newDataString !== this.oldData) {
+                        this.oldData = newDataString;
+                        this.data = newData; 
+                        callback(this.data);
+                    }
+                } catch (error) {
+                    console.error("Lỗi khi kiểm tra Sheet update:", error);
+                }
+            }
+
+            // Dù lúc nãy có bỏ qua vì đang saving hay không, vẫn phải đặt lịch cho chu kỳ tiếp theo
+            if (this.activeTimers[key]) {
+                setTimeout(poll, timeout);
+            }
+        };
+
+        poll();
     }
 }
 

@@ -103,14 +103,10 @@ const activeTimers = {};
  */
 function playRunForTime(func, time, id) {
     // Kiểm tra xem ID này đã được chạy trước đó chưa để tránh việc tạo ra nhiều vòng lặp trùng lặp
-    if (activeTimers[id]) {
-        console.warn(`Hàm với ID '${id}' đang hoạt động rồi!`);
-        return;
-    }
+    if (activeTimers[id]) { return; }
 
     // Sử dụng setInterval và lưu ID của bộ đếm vào Object
     activeTimers[id] = setInterval(func, time);
-    console.log(`Đã bắt đầu chạy hàm với ID '${id}'.`);
 }
 
 /**
@@ -176,12 +172,14 @@ async function removeImage(imageId) {
 
 const setupData = new LoadDataForDict(scriptURL, "Setup");
 const debouncedSave = debounce(() => setupData.save(), 1000);
-setupData.init().then(() => {
+
+function updateSetupData() {
     if (!setupData.check('dateSetup')) {
         setupData.set('dateSetup', { month: 1, year: 2024, years: [2024, 2025, 2026] });
     }
 
     const dateSetup = setupData.get('dateSetup');
+    yearSelect.innerHTML = '';
     dateSetup.years.forEach(year => {
         const option = document.createElement('option');
         option.value = year;
@@ -237,6 +235,7 @@ setupData.init().then(() => {
     if (!setupData.check('stylesSetup')) { setupData.set('stylesSetup', []); }
     let stylesSetupData = setupData.get('stylesSetup');
     let index = 0;
+    stylesSetupContent.innerHTML = '';
     stylesSetupData.forEach(style => { addSetupItem(stylesSetupContent, style, 'style', (checkbox) => {
         style.checked = checkbox.checked;
         setupData.set('stylesSetup', stylesSetupData);
@@ -275,6 +274,7 @@ setupData.init().then(() => {
     if (!setupData.check('fashionsSetup')) { setupData.set('fashionsSetup', []); }
     let fashionsSetupData = setupData.get('fashionsSetup');
     index = 0;
+    fashionsSetupContent.innerHTML = '';
     fashionsSetupData.forEach(fashion => { addSetupItem(fashionsSetupContent, fashion, 'fashion', (checkbox) => {
         fashion.checked = checkbox.checked;
         setupData.set('fashionsSetup', fashionsSetupData);
@@ -309,11 +309,15 @@ setupData.init().then(() => {
         setupData.set('fashionsSetup', fashionsSetupData);
         debouncedSave();
     });
-})
+}
+
+setupData.init().then(() => { updateSetupData() });
+// setupData.addChangeSheetCallback('Setup', updateSetupData);
 
 const sheetData = new LoadDataForDict(scriptURL, "Sheet1");
 const debouncedSaveSheet = debounce(() => sheetData.save(), 1000);
-sheetData.init().then(() => {
+
+function updateSheetData() {
     // 1. Tạo một mảng tạm để chứa dữ liệu
     let tempItems = [];
 
@@ -338,10 +342,14 @@ sheetData.init().then(() => {
     });
 
     closeLoadingBar();
-})
+}
+
+sheetData.init().then(() => { updateSheetData() });
+sheetData.addChangeSheetCallback('SheetData', updateSheetData);
 
 const imageDict = new LoadDataForDict(scriptURL, "Image");
-imageDict.init().then(() => {
+
+function updateImageData() {
     let dateDict = {};
     imageDict.forEach((key, value) => {
         const vl = JSON.parse(value);
@@ -379,7 +387,10 @@ imageDict.init().then(() => {
             })
         });
     }
-})
+}
+
+imageDict.init().then(() => { updateImageData() });
+imageDict.addChangeSheetCallback('Image', updateImageData);
 
 addImageBtn.addEventListener('click', () => {
     loadImageInput.click();
@@ -989,5 +1000,11 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
     }
 })
 
-document.addEventListener('DOMContentLoaded', resizeEvent);
+document.addEventListener('DOMContentLoaded', () => {
+    resizeEvent();
+    openLoadingBar();
+    playRunForTimeToLoop((count) => { 
+        setLoadingBarValue(count, "Setting up data... ");
+    }, 50, 100);
+});
 window.addEventListener('resize', resizeEvent);
