@@ -6,8 +6,6 @@ document.documentElement.style.setProperty('--init-width', `${initWidth}px`);
 document.documentElement.style.setProperty('--init-height', `${initHeight}px`);
 
 const scriptURL = 'https://script.google.com/macros/s/AKfycbxqzCDnwjefL0MuPdOulqvOUNffSOjAmQgotTa-cdXejZ_8u1o2P-GjOo3lV6s7NJjoyQ/exec';
-const imageDict = new LoadDataForDict(scriptURL, "Image");
-imageDict.init();
 
 const addBtnItem = document.querySelector('.add-btn-item');
 const setupBtnItem = document.querySelector('.setup-btn-item');
@@ -26,7 +24,6 @@ const fashionsSetupAll = document.getElementById('checkbox-fashion-all');
 const stylesSetup = document.getElementById('styles-setup');
 const fashionsSetup = document.getElementById('fashions-setup');
 const addSpImgBox = document.getElementById('add-sp-image-box');
-const addSpInput = document.getElementById('add-sp-image-input');
 const addSpMenu = document.getElementById('addSpMenu');
 const addSpMenuAddBtn = document.getElementById('sp-btn-add');
 const addSpMenuApplyBtn = document.getElementById('sp-btn-apply');
@@ -43,13 +40,20 @@ const mainPanel = document.getElementById('main');
 const loading = document.getElementById('loading');
 const loadingBarFill = document.getElementById('loading-bar-fill');
 const loadingText = document.getElementById('loading-text');
+const addImageBtn = document.getElementById('image-input-bar-btn-add');
+const removeImageBtn = document.getElementById('image-input-bar-btn-remove');
+const applyImageBtn = document.getElementById('image-input-bar-btn-apply');
+const closeImageBtn = document.getElementById('image-input-bar-btn-close');
+const loadImageInput = document.getElementById('image-input-item-load');
+const imageContents = document.getElementById('image-input-bar-contents');
+const imageBar = document.getElementById('image-input-bar');
 
 let openPanel = null;
 let isVertical = true;
 let isCmtOpen = false;
 let openSpMenuStyle = "add new";
 let oldSrc = '';
-let loadNewImg = false;
+let imgAddCmt = false;
 const tokenKey = 'userToken-SuhaoApp';
 let token = localStorage.getItem(tokenKey);
 let userDict = {};
@@ -153,12 +157,354 @@ function openLoadingBar() {
 
 function closeLoadingBar() {
     loading.style.display = 'none';
+    setLoadingBarValue(0);
 }
 
 function setLoadingBarValue(value, text = '') {
     loadingBarFill.style.width = `${value}%`;
     loadingText.innerText = `${text}${value}%`;
 }
+
+async function removeImage(imageId) {
+    const oldFileIdMatch = imageId.src.match(/[-\w]{25,}/);
+            
+    if (oldFileIdMatch) {
+        await deleteImageFromDrive(oldFileIdMatch[0]);
+        console.log("Đang xóa ảnh cũ trên Drive:", oldFileIdMatch[0]);
+    }
+}
+
+const setupData = new LoadDataForDict(scriptURL, "Setup");
+const debouncedSave = debounce(() => setupData.save(), 1000);
+setupData.init().then(() => {
+    if (!setupData.check('dateSetup')) {
+        setupData.set('dateSetup', { month: 1, year: 2024, years: [2024, 2025, 2026] });
+    }
+
+    const dateSetup = setupData.get('dateSetup');
+    dateSetup.years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+    });
+
+    monthSelect.value = dateSetup.month;
+    yearSelect.value = dateSetup.year;
+
+    monthSelect.addEventListener('change', () => {
+        dateSetup.month = parseInt(monthSelect.value);
+        setupData.set('dateSetup', dateSetup);
+        debouncedSave();
+    });
+
+    yearSelect.addEventListener('change', () => {
+        dateSetup.year = parseInt(yearSelect.value);
+        setupData.set('dateSetup', dateSetup);
+        debouncedSave();
+    });
+
+    const editDateSetup = dateSetupPanel.querySelector('.editBtn');
+    editDateSetup.addEventListener('click', () => {
+        openEditMenu(dateSetup.years, (newList) => {
+            dateSetup.years = newList;
+            setupData.set('dateSetup', dateSetup);
+            debouncedSave();
+
+            // Cập nhật lại yearSelect
+            yearSelect.innerHTML = '';
+            dateSetup.years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            });
+
+            yearSelect.value = dateSetup.year;
+        });
+    });
+
+    checkedSetup.checked = setupData.get('filterChecked');
+    let isChecked = checkedSetup.checked;
+    checkedSetup.addEventListener('change', () => {
+        if (checkedSetup.checked !== isChecked) {
+            setupData.set('filterChecked', checkedSetup.checked);
+            debouncedSave();
+            isChecked = checkedSetup.checked;
+        }
+    });
+
+    if (!setupData.check('stylesSetup')) { setupData.set('stylesSetup', []); }
+    let stylesSetupData = setupData.get('stylesSetup');
+    let index = 0;
+    stylesSetupData.forEach(style => { addSetupItem(stylesSetupContent, style, 'style', (checkbox) => {
+        style.checked = checkbox.checked;
+        setupData.set('stylesSetup', stylesSetupData);
+        debouncedSave();
+    }, index++) });
+
+    const editStylesSetup = stylesSetup.querySelector('.editBtn');
+    editStylesSetup.addEventListener('click', () => {
+        const stylesSetupDataList = stylesSetupData.map(item => item.value);
+        openEditMenu(stylesSetupDataList, (newList) => {
+            stylesSetupData = newList.map(item => { 
+                return { value: item, checked: false };
+            });
+            setupData.set('stylesSetup', stylesSetupData);
+            debouncedSave();
+            stylesSetupContent.innerHTML = '';
+            let index = 0;
+            stylesSetupData.forEach(style => { addSetupItem(stylesSetupContent, style, 'style', (checkbox) => {
+                style.checked = checkbox.checked;
+                setupData.set('stylesSetup', stylesSetupData);
+                debouncedSave();
+            }, index++)});
+        });
+    });
+
+    stylesSetupAll.addEventListener('change', () => {
+        stylesSetupData.forEach(style => {
+            style.checked = stylesSetupAll.checked;
+            const checkbox = stylesSetupContent.querySelector(`input[value="${style.value}"]`);
+            if (checkbox) checkbox.checked = stylesSetupAll.checked;
+        });
+        setupData.set('stylesSetup', stylesSetupData);
+        debouncedSave();
+    });
+
+    if (!setupData.check('fashionsSetup')) { setupData.set('fashionsSetup', []); }
+    let fashionsSetupData = setupData.get('fashionsSetup');
+    index = 0;
+    fashionsSetupData.forEach(fashion => { addSetupItem(fashionsSetupContent, fashion, 'fashion', (checkbox) => {
+        fashion.checked = checkbox.checked;
+        setupData.set('fashionsSetup', fashionsSetupData);
+        debouncedSave();
+    }, index++) });
+
+    const editFashionsSetup = fashionsSetup.querySelector('.editBtn');
+    editFashionsSetup.addEventListener('click', () => {
+        const fashionsSetupDataList = fashionsSetupData.map(item => item.value);
+        openEditMenu(fashionsSetupDataList, (newList) => {
+            fashionsSetupData = newList.map(item => { 
+                return { value: item, checked: false };
+            });
+            setupData.set('fashionsSetup', fashionsSetupData);
+            debouncedSave();
+            fashionsSetupContent.innerHTML = '';
+            let index = 0;
+            fashionsSetupData.forEach(fashion => { addSetupItem(fashionsSetupContent, fashion, 'fashion', (checkbox) => {
+                fashion.checked = checkbox.checked;
+                setupData.set('fashionsSetup', fashionsSetupData);
+                debouncedSave();
+            }, index++)});
+        });
+    });
+
+    fashionsSetupAll.addEventListener('change', () => {
+        fashionsSetupData.forEach(fashion => {
+            fashion.checked = fashionsSetupAll.checked;
+            const checkbox = fashionsSetupContent.querySelector(`input[value="${fashion.value}"]`);
+            if (checkbox) checkbox.checked = fashionsSetupAll.checked;
+        });
+        setupData.set('fashionsSetup', fashionsSetupData);
+        debouncedSave();
+    });
+})
+
+const sheetData = new LoadDataForDict(scriptURL, "Sheet1");
+const debouncedSaveSheet = debounce(() => sheetData.save(), 1000);
+sheetData.init().then(() => {
+    // 1. Tạo một mảng tạm để chứa dữ liệu
+    let tempItems = [];
+
+    // 2. Parse JSON và đẩy toàn bộ dữ liệu vào mảng
+    sheetData.forEach((id, itemString) => {
+        tempItems.push({
+            id: id,
+            itemData: JSON.parse(itemString)
+        });
+    });
+
+    // 3. Sắp xếp mảng theo ngày (item.date)
+    tempItems.sort((a, b) => {
+        const dateA = new Date(a.itemData.date);
+        const dateB = new Date(b.itemData.date);
+        return dateA - dateB; 
+    });
+
+    // 4. Lặp qua mảng đã sắp xếp để in ra màn hình
+    tempItems.forEach((obj, index) => {
+        addMainItem(obj.id, obj.itemData);
+    });
+
+    closeLoadingBar();
+})
+
+const imageDict = new LoadDataForDict(scriptURL, "Image");
+imageDict.init().then(() => {
+    let dateDict = {};
+    imageDict.forEach((key, value) => {
+        const vl = JSON.parse(value);
+        if (!dateDict[vl.date]) { dateDict[vl.date] = []; }
+        dateDict[vl.date].push(vl);
+    });
+
+    for (const [date, images] of Object.entries(dateDict)) {
+        const dateStr = new Date(date).toString().split(' ').slice(0, 4).join(' ');
+        const dateDiv = document.createElement('div');
+        dateDiv.classList.add('image-date-bar');
+        dateDiv.setAttribute('data-date', date);
+        dateDiv.innerHTML = `<p style="font-size: calc(var(--panel-size) * 0.042); font-weight: normal; font-style: italic;">${dateStr}</p>`;
+        imageContents.appendChild(dateDiv);
+
+        const contentDiv = document.createElement('div');
+        contentDiv.classList.add('image-content-bar');
+        dateDiv.appendChild(contentDiv);
+
+        images.forEach((image) => {
+            const imageDiv = document.createElement('div');
+            imageDiv.classList.add('image-item-bar');
+            imageDiv.innerHTML = `
+                <img src="${image.img}" alt="${image.name}">
+                <p>${image.name}</p>
+            `;
+            contentDiv.appendChild(imageDiv);
+
+            imageDiv.addEventListener('click', () => {
+                // Xóa selected class cơ bản
+                const selected = document.querySelector('.image-item-bar.selected');
+                if (selected) { selected.classList.remove('selected'); }
+
+                imageDiv.classList.add('selected');
+            })
+        });
+    }
+})
+
+addImageBtn.addEventListener('click', () => {
+    loadImageInput.click();
+});
+
+closeImageBtn.addEventListener('click', () => {
+    imageBar.style.display = 'none';
+});
+
+removeImageBtn.addEventListener('click', async () => {
+    const selected = document.querySelector('.image-item-bar.selected');
+    const alt = selected.querySelector('p').textContent;
+    const date = selected.closest('.image-date-bar').getAttribute('data-date');
+    const id = `${alt} - ${date}`;
+    if (selected) {
+        const oldFileIdMatch = selected.querySelector('img').src.match(/[-\w]{25,}/);
+        selected.remove();
+        imageDict.remove(id);
+        imageDict.save();
+        if (oldFileIdMatch) {
+            await deleteImageFromDrive(oldFileIdMatch[0]);
+        }
+    }
+});
+
+applyImageBtn.addEventListener('click', () => {
+    const selected = document.querySelector('.image-item-bar.selected');
+    if (selected) {
+        if (imgAddCmt) {
+            // Thêm cơ bản
+        } else {
+            const img = selected.querySelector('img').src;
+            addSpImageBox.src = img;
+        }
+    }
+    imageBar.style.display = 'none';
+})
+
+loadImageInput.addEventListener('change', async () => {
+    const files = loadImageInput.files;
+    
+    // Nếu người dùng ấn Cancel không chọn ảnh thì dừng lại
+    if (files.length === 0) return;
+    openLoadingBar();
+
+    const date = new Date().toLocaleDateString();
+    const dateStr = new Date(date).toString().split(' ').slice(0, 4).join(' ');
+    let dateContent = imageContents.querySelector(`[data-date="${date}"]`);
+    if (!dateContent) {
+        dateContent = document.createElement('div');
+        dateContent.classList.add('image-date-bar');
+        dateContent.setAttribute('data-date', date);
+        dateContent.innerHTML = `<p style="font-size: calc(var(--panel-size) * 0.042); font-weight: normal; font-style: italic;">${dateStr}</p>`;
+        imageContents.prepend(dateContent);
+
+        const contentDiv = document.createElement('div');
+        contentDiv.classList.add('image-content-bar');
+        dateContent.appendChild(contentDiv);
+    }
+
+    const itemsContent = dateContent.querySelector('.image-content-bar');
+
+    // Lặp qua từng file đã chọn
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Cập nhật thanh tiến trình hiển thị số thứ tự ảnh đang xử lý
+        setLoadingBarValue(0, `Đang xử lý ảnh ${i + 1}/${files.length}... `);
+
+        // Bọc FileReader trong Promise để chờ đọc xong mới đi tiếp
+        const base64Data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+
+        if (base64Data && base64Data.startsWith('data:image')) {
+            // Chạy hiệu ứng thanh tải
+            playRunForTimeToLoop((count) => { 
+                setLoadingBarValue(count, `Đang tải ảnh ${i + 1}/${files.length}... - `); 
+            }, 100, 100);
+            
+            // Upload ảnh lên Drive
+            const driveUrl = await uploadImageToDrive(base64Data, file.name);
+            setLoadingBarValue(100, `Hoàn tất ảnh ${i + 1}... `);
+            
+            const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
+            const imgId = fileIdMatch ? fileIdMatch[0] : '';
+            const img = `https://lh3.googleusercontent.com/u/0/d/${imgId}=s400`;
+
+            // Thêm vào dữ liệu
+            const newItem = {
+                name: file.name,
+                img: img,
+                date: date
+            };
+
+            const imageDiv = document.createElement('div');
+            imageDiv.classList.add('image-item-bar');
+            imageDiv.innerHTML = `
+                <img src="${newItem.img}" alt="${newItem.name}">
+                <p>${newItem.name}</p>
+            `;
+            itemsContent.appendChild(imageDiv);
+
+            imageDiv.addEventListener('click', () => {
+                // Xóa selected class cơ bản
+                const selected = document.querySelector('.image-item-bar.selected');
+                if (selected) { selected.classList.remove('selected'); }
+
+                imageDiv.classList.add('selected');
+            })
+
+            imageDict.set(`${newItem.name} - ${newItem.date}`, newItem);
+        }
+    }
+
+    // Sau khi vòng lặp hoàn tất (đã upload xong tất cả), mới lưu và đóng loading bar
+    imageDict.save();
+    closeLoadingBar();
+    
+    // Reset lại input để có thể chọn lại cùng 1 danh sách ảnh nếu muốn
+    loadImageInput.value = ''; 
+});
 
 function resetCmtPanelViewIsOpen(comment, content, img, cmtbtn, later) {
     if (isVertical) {
@@ -182,7 +528,7 @@ function resetCmtPanelViewIsOpen(comment, content, img, cmtbtn, later) {
     }
 }
 
-function addMainItem(id, item, sheetData, setupData, isEdit = false) {
+function addMainItem(id, item, isEdit = false) {
     let div
 
     if (!isEdit) {
@@ -260,15 +606,12 @@ function addMainItem(id, item, sheetData, setupData, isEdit = false) {
     repBar.classList.add('main-item-rep-bar');
     comment.appendChild(repBar);
 
-    const inputImg = document.createElement('input');
-    inputImg.type = 'file';
-    inputImg.accept = 'image/*';
-    inputImg.style.display = 'none';
-    repBar.appendChild(inputImg);
-
     const inputImgBtn = document.createElement('div');
     inputImgBtn.classList.add('main-item-input-img');
-    inputImgBtn.onclick = () => { inputImg.click(); };
+    inputImgBtn.onclick = () => { 
+        imageBar.style.display = 'flex';
+        imgAddCmt = true;
+    };
     repBar.appendChild(inputImgBtn);
 
     const repInput = document.createElement('div');
@@ -500,48 +843,8 @@ function openEditMenu(list, func) {
 }
 
 addSpImgBox.addEventListener('click', () => {
-    addSpInput.click();
-});
-
-addSpInput.addEventListener('change', () => {
-    const file = addSpInput.files[0];
-    
-    // Thêm chốt chặn: Nếu người dùng mở hộp thoại chọn ảnh nhưng bấm "Cancel", file sẽ null -> Dừng lại luôn
-    if (!file) return; 
-
-    const reader = new FileReader();
-    oldSrc = addSpImgBox.src; // Lưu lại link ảnh cũ
-
-    reader.onload = async () => {
-        let finalImageUrl = reader.result;
-        
-        // 1. Gán chuỗi base64 để hiển thị preview ngay lập tức cho mượt
-        addSpImgBox.src = finalImageUrl;
-        openLoadingBar();
-
-        try {
-            playRunForTimeToLoop((count) => {
-                setLoadingBarValue(count, 'Đang tải ảnh... ');
-            }, 100, 100);
-            // [ĐÃ SỬA]: Dùng finalImageUrl thay cho img
-            if (finalImageUrl && finalImageUrl.startsWith('data:image')) {
-                
-                // 2. Upload ảnh thật lên Drive
-                const driveUrl = await uploadImageToDrive(finalImageUrl, file.name);
-                setLoadingBarValue(100, 'Đang tải ảnh... ');
-                
-                // 3. Cập nhật lại khung ảnh bằng link thật từ Drive
-                const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
-                addSpImgBox.src = `https://lh3.googleusercontent.com/u/0/d/${fileIdMatch[0]}=s400`;
-                closeLoadingBar();
-                loadNewImg = true;
-            }
-        } catch (error) {
-            console.error('Lỗi khi upload/xóa hình ảnh:', error.message);
-        }
-    };
-    
-    reader.readAsDataURL(file);
+    imageBar.style.display = 'flex';
+    imgAddCmt = false;
 });
 
 const closeEditMenuBtn = document.getElementById('edit-menu-btn-close');
@@ -576,312 +879,115 @@ cmdBtnItem.addEventListener('click', () => {
     openPanelEvent()
 });
 
-// Thêm async vào đây
-async function init() {
-    resizeEvent();
-    openLoadingBar();
-    setLoadingBarValue(0, 'Đang tạo cơ sở dữ liệu... ');
-    playRunForTimeToLoop((count) => {
-        setLoadingBarValue(count * 2, 'Đọc cơ sở dữ liệu... ');
-    }, 300, 25);
-    const sheetData = new LoadDataForDict(scriptURL, "Sheet1");
-    await sheetData.init();
+addBtnItem.addEventListener('click', () => {
+    openSpMenuStyle = "add new";
+    OpenAddSpMenu(setupData);
+});
 
-    const setupData = new LoadDataForDict(scriptURL, "Setup");
-    await setupData.init();
+addSpMenuCloseBtn.addEventListener('click', async () => {
+    addSpMenu.style.display = 'none';
+});
 
-    const debouncedSave = debounce(() => setupData.save(), 1000);
-    const debouncedSaveSheet = debounce(() => sheetData.save(), 1000);
+addSpMenuAddBtn.addEventListener('click', () => {
+    const div = document.createElement('div');
+    div.classList.add('add-sp-item');
+    addSpItems.appendChild(div);
 
-    if (!setupData.check('dateSetup')) {
-        setupData.set('dateSetup', { month: 1, year: 2024, years: [2024, 2025, 2026] });
-    }
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Màu ...';
+    input.style.flex = '1';
+    div.appendChild(input);
 
-    const dateSetup = setupData.get('dateSetup');
-    dateSetup.years.forEach(year => {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        yearSelect.appendChild(option);
+    div.appendChild(document.createTextNode(':'));
+
+    const input2 = document.createElement('input');
+    input2.type = 'number';
+    input2.value = '0';
+    input2.style.width = '20%';
+    div.appendChild(input2);
+
+    const removeBtn = document.createElement('div');
+    removeBtn.classList.add('remove-btn');
+    div.appendChild(removeBtn);
+
+    removeBtn.addEventListener('click', () => {
+        addSpItems.removeChild(div);
     });
+});
 
-    monthSelect.value = dateSetup.month;
-    yearSelect.value = dateSetup.year;
+addSpMenuApplyBtn.addEventListener('click', async () => {
+    if (openSpMenuStyle === "add new") {
+        const date = addSpDateInput.value;
+        const actor = addSpActorInput.value;
+        const group = addSpGroupInput.value;
+        const name = addSpNameInput.value;
+        const size = addSpSizeInput.value;
+        const code = addSpCodeInput.value;
+        const img = addSpImageBox.src;
+        const id = `${name} - ${new Date().getTime()}`;
 
-    monthSelect.addEventListener('change', () => {
-        dateSetup.month = parseInt(monthSelect.value);
-        setupData.set('dateSetup', dateSetup);
-        debouncedSave();
-    });
+        let sl = {};
+        addSpMenu.querySelectorAll('.add-sp-item').forEach(item => {
+            const color = item.querySelector('input').value;
+            const quantity = item.querySelector('input[type="number"]').value;
+            sl[color] = quantity;
+        })
 
-    yearSelect.addEventListener('change', () => {
-        dateSetup.year = parseInt(yearSelect.value);
-        setupData.set('dateSetup', dateSetup);
-        debouncedSave();
-    });
-
-    const editDateSetup = dateSetupPanel.querySelector('.editBtn');
-    editDateSetup.addEventListener('click', () => {
-        openEditMenu(dateSetup.years, (newList) => {
-            dateSetup.years = newList;
-            setupData.set('dateSetup', dateSetup);
-            debouncedSave();
-
-            // Cập nhật lại yearSelect
-            yearSelect.innerHTML = '';
-            dateSetup.years.forEach(year => {
-                const option = document.createElement('option');
-                option.value = year;
-                option.textContent = year;
-                yearSelect.appendChild(option);
-            });
-
-            yearSelect.value = dateSetup.year;
-        });
-    });
-
-    checkedSetup.checked = setupData.get('filterChecked');
-    let isChecked = checkedSetup.checked;
-    checkedSetup.addEventListener('change', () => {
-        if (checkedSetup.checked !== isChecked) {
-            setupData.set('filterChecked', checkedSetup.checked);
-            debouncedSave();
-            isChecked = checkedSetup.checked;
-        }
-    });
-
-    if (!setupData.check('stylesSetup')) { setupData.set('stylesSetup', []); }
-    let stylesSetupData = setupData.get('stylesSetup');
-    let index = 0;
-    stylesSetupData.forEach(style => { addSetupItem(stylesSetupContent, style, 'style', (checkbox) => {
-        style.checked = checkbox.checked;
-        setupData.set('stylesSetup', stylesSetupData);
-        debouncedSave();
-    }, index++) });
-
-    const editStylesSetup = stylesSetup.querySelector('.editBtn');
-    editStylesSetup.addEventListener('click', () => {
-        const stylesSetupDataList = stylesSetupData.map(item => item.value);
-        openEditMenu(stylesSetupDataList, (newList) => {
-            stylesSetupData = newList.map(item => { 
-                return { value: item, checked: false };
-            });
-            setupData.set('stylesSetup', stylesSetupData);
-            debouncedSave();
-            stylesSetupContent.innerHTML = '';
-            let index = 0;
-            stylesSetupData.forEach(style => { addSetupItem(stylesSetupContent, style, 'style', (checkbox) => {
-                style.checked = checkbox.checked;
-                setupData.set('stylesSetup', stylesSetupData);
-                debouncedSave();
-            }, index++)});
-        });
-    });
-
-    stylesSetupAll.addEventListener('change', () => {
-        stylesSetupData.forEach(style => {
-            style.checked = stylesSetupAll.checked;
-            const checkbox = stylesSetupContent.querySelector(`input[value="${style.value}"]`);
-            if (checkbox) checkbox.checked = stylesSetupAll.checked;
-        });
-        setupData.set('stylesSetup', stylesSetupData);
-        debouncedSave();
-    });
-
-    if (!setupData.check('fashionsSetup')) { setupData.set('fashionsSetup', []); }
-    let fashionsSetupData = setupData.get('fashionsSetup');
-    index = 0;
-    fashionsSetupData.forEach(fashion => { addSetupItem(fashionsSetupContent, fashion, 'fashion', (checkbox) => {
-        fashion.checked = checkbox.checked;
-        setupData.set('fashionsSetup', fashionsSetupData);
-        debouncedSave();
-    }, index++) });
-
-    const editFashionsSetup = fashionsSetup.querySelector('.editBtn');
-    editFashionsSetup.addEventListener('click', () => {
-        const fashionsSetupDataList = fashionsSetupData.map(item => item.value);
-        openEditMenu(fashionsSetupDataList, (newList) => {
-            fashionsSetupData = newList.map(item => { 
-                return { value: item, checked: false };
-            });
-            setupData.set('fashionsSetup', fashionsSetupData);
-            debouncedSave();
-            fashionsSetupContent.innerHTML = '';
-            let index = 0;
-            fashionsSetupData.forEach(fashion => { addSetupItem(fashionsSetupContent, fashion, 'fashion', (checkbox) => {
-                fashion.checked = checkbox.checked;
-                setupData.set('fashionsSetup', fashionsSetupData);
-                debouncedSave();
-            }, index++)});
-        });
-    });
-
-    fashionsSetupAll.addEventListener('change', () => {
-        fashionsSetupData.forEach(fashion => {
-            fashion.checked = fashionsSetupAll.checked;
-            const checkbox = fashionsSetupContent.querySelector(`input[value="${fashion.value}"]`);
-            if (checkbox) checkbox.checked = fashionsSetupAll.checked;
-        });
-        setupData.set('fashionsSetup', fashionsSetupData);
-        debouncedSave();
-    });
-
-    addBtnItem.addEventListener('click', () => {
-        openSpMenuStyle = "add new";
-        OpenAddSpMenu(setupData);
-    });
-
-    addSpMenuCloseBtn.addEventListener('click', async () => {
-        addSpMenu.style.display = 'none';
-        // if (addSpImgBox.src && addSpImgBox.src !== 'icon/image.png' && loadNewImg === true) {
-        //     const oldFileIdMatch = addSpImgBox.src.match(/[-\w]{25,}/);
-            
-        //     if (oldFileIdMatch) {
-        //         await deleteImageFromDrive(oldFileIdMatch[0]);
-        //         console.log("Đang xóa ảnh cũ trên Drive:", oldFileIdMatch[0]);
-        //         loadNewImg = false;
-        //     }
-        // }
-    });
-
-    addSpMenuAddBtn.addEventListener('click', () => {
-        const div = document.createElement('div');
-        div.classList.add('add-sp-item');
-        addSpItems.appendChild(div);
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = 'Màu ...';
-        input.style.flex = '1';
-        div.appendChild(input);
-
-        div.appendChild(document.createTextNode(':'));
-
-        const input2 = document.createElement('input');
-        input2.type = 'number';
-        input2.value = '0';
-        input2.style.width = '20%';
-        div.appendChild(input2);
-
-        const removeBtn = document.createElement('div');
-        removeBtn.classList.add('remove-btn');
-        div.appendChild(removeBtn);
-
-        removeBtn.addEventListener('click', () => {
-            addSpItems.removeChild(div);
-        });
-    });
-
-    addSpMenuApplyBtn.addEventListener('click', async () => {
-        if (openSpMenuStyle === "add new") {
-            const date = addSpDateInput.value;
-            const actor = addSpActorInput.value;
-            const group = addSpGroupInput.value;
-            const name = addSpNameInput.value;
-            const size = addSpSizeInput.value;
-            const code = addSpCodeInput.value;
-            const img = addSpImageBox.src;
-            const id = `${name} - ${new Date().getTime()}`;
-
-            let sl = {};
-            addSpMenu.querySelectorAll('.add-sp-item').forEach(item => {
-                const color = item.querySelector('input').value;
-                const quantity = item.querySelector('input[type="number"]').value;
-                sl[color] = quantity;
-            })
-
-            let newItems = {
-                date: date,
-                actor: actor,
-                group: group,
-                name: name,
-                size: size,
-                code: code,
-                sl: sl,
-                img: img,
-                id: id,
-                cmts: []
-            }
-
-            addMainItem(id, newItems, sheetData, setupData);
-            addSpMenu.style.display = 'none';
-            sheetData.set(id, newItems);
-            debouncedSaveSheet();
-        } else {
-            const date = addSpDateInput.value;
-            const actor = addSpActorInput.value;
-            const group = addSpGroupInput.value;
-            const name = addSpNameInput.value;
-            const size = addSpSizeInput.value;
-            const code = addSpCodeInput.value;
-            const img = addSpImageBox.src;
-            const id = `${name} - ${new Date().getTime()}`;
-
-            let sl = {};
-            addSpMenu.querySelectorAll('.add-sp-item').forEach(item => {
-                const color = item.querySelector('input').value;
-                const quantity = item.querySelector('input[type="number"]').value;
-                sl[color] = quantity;
-            })
-
-            let newItems = {
-                date: date,
-                actor: actor,
-                group: group,
-                name: name,
-                size: size,
-                code: code,
-                sl: sl,
-                img: img,
-                id: id,
-                cmts: []
-            }
-
-            addSpMenu.style.display = 'none';
-            addMainItem(id, newItems, sheetData, setupData, true);
-            sheetData.remove(openSpMenuStyle);
-            sheetData.set(id, newItems);
-            debouncedSaveSheet();
-        }
-
-        // if (oldSrc && oldSrc !== 'icon/image.png' && oldSrc !== '' && oldSrc !== addSpImgBox.src && loadNewImg === true) {
-        //     const oldFileIdMatch = oldSrc.match(/[-\w]{25,}/);
-            
-        //     if (oldFileIdMatch) {
-        //         console.log("Đang xóa ảnh cũ trên Drive:", oldFileIdMatch[0]);
-        //         await deleteImageFromDrive(oldFileIdMatch[0]);
-        //         loadNewImg = false;
-        //     }
-        // }
-    })
-
-    // 1. Tạo một mảng tạm để chứa dữ liệu
-    let tempItems = [];
-
-    // 2. Parse JSON và đẩy toàn bộ dữ liệu vào mảng
-    sheetData.forEach((id, itemString) => {
-        tempItems.push({
+        let newItems = {
+            date: date,
+            actor: actor,
+            group: group,
+            name: name,
+            size: size,
+            code: code,
+            sl: sl,
+            img: img,
             id: id,
-            itemData: JSON.parse(itemString)
-        });
-    });
+            cmts: []
+        }
 
-    // 3. Sắp xếp mảng theo ngày (item.date)
-    tempItems.sort((a, b) => {
-        const dateA = new Date(a.itemData.date);
-        const dateB = new Date(b.itemData.date);
-        return dateA - dateB; 
-    });
+        addMainItem(id, newItems);
+        addSpMenu.style.display = 'none';
+        sheetData.set(id, newItems);
+        debouncedSaveSheet();
+    } else {
+        const date = addSpDateInput.value;
+        const actor = addSpActorInput.value;
+        const group = addSpGroupInput.value;
+        const name = addSpNameInput.value;
+        const size = addSpSizeInput.value;
+        const code = addSpCodeInput.value;
+        const img = addSpImageBox.src;
+        const id = `${name} - ${new Date().getTime()}`;
 
-    // 4. Lặp qua mảng đã sắp xếp để in ra màn hình
-    const maxload = 50 / tempItems.length;
-    tempItems.forEach((obj, index) => {
-        addMainItem(obj.id, obj.itemData, sheetData, setupData);
-        setLoadingBarValue(parseInt((index + 1) * maxload + 50), 'Truyền dữ liệu... ');
-    });
+        let sl = {};
+        addSpMenu.querySelectorAll('.add-sp-item').forEach(item => {
+            const color = item.querySelector('input').value;
+            const quantity = item.querySelector('input[type="number"]').value;
+            sl[color] = quantity;
+        })
 
-    closeLoadingBar();
-}
+        let newItems = {
+            date: date,
+            actor: actor,
+            group: group,
+            name: name,
+            size: size,
+            code: code,
+            sl: sl,
+            img: img,
+            id: id,
+            cmts: []
+        }
 
-document.addEventListener('DOMContentLoaded', init);
+        addSpMenu.style.display = 'none';
+        addMainItem(id, newItems, true);
+        sheetData.remove(openSpMenuStyle);
+        sheetData.set(id, newItems);
+        debouncedSaveSheet();
+    }
+})
+
+document.addEventListener('DOMContentLoaded', resizeEvent);
 window.addEventListener('resize', resizeEvent);

@@ -660,8 +660,7 @@ select {
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 100;
-    display: flex;
+    z-index: 101;
     align-items: center;
     justify-content: center;
     background-color: #0000008f;
@@ -706,6 +705,7 @@ select {
     background-color: #00000021;
     display: flex;
     flex-direction: row;
+    user-select: none;
 }
 
 .main-item-input-img {
@@ -782,14 +782,80 @@ select {
     background-color: #eeeeee;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: top;
+    align-content: center;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+    overflow-y: auto;
+}
+
+.image-date-bar {
+    width: 100%;
+    margin-bottom: calc(var(--panel-size) * 0.02);
+}
+
+.image-content-bar {
+    flex-wrap: wrap;
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    align-items: center;
+    width: 100%;
 }
 
 #image-input-bar-btns {
     width: 100%;
-    height: calc(var(--panel-size) * 0.09);
+    height: calc(var(--panel-size) * 0.08);
     display: flex;
     flex-direction: row;
+    justify-content: left;
+    align-items: center;
+}
+
+#image-input-bar-btns > div {
+    height: 100%;
+    padding: calc(var(--panel-size) * 0.01) calc(var(--panel-size) * 0.028);
+    display: flex;
     justify-content: center;
     align-items: center;
+    cursor: pointer;
+    font-size: calc(var(--panel-size) * 0.045);
+}
+
+#image-input-bar-btns > div:hover {
+    background-color: #00000060;
+}
+
+.image-item-bar {
+    width: calc(var(--panel-size) * 0.32);
+    padding: calc(var(--panel-size) * 0.01);
+    font-size: calc(var(--panel-size) * 0.042);
+    font-style: italic;
+    font-weight: normal;
+    color: #000000;
+}
+
+.image-item-bar > img {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--border-radius);
+}
+
+.image-item-bar > p {
+    text-align: center;
+    overflow: hidden;
+    word-wrap: normal;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.image-item-bar:hover {
+    background-color: #00000028;
+}
+
+.image-item-bar.selected {
+    background-color: #3d3c94;
+    border-radius: var(--border-radius);
+    color: #ffffff;
 }
