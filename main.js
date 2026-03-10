@@ -320,6 +320,7 @@ const debouncedSaveSheet = debounce(() => sheetData.save(), 1000);
 function updateSheetData() {
     // 1. Tạo một mảng tạm để chứa dữ liệu
     let tempItems = [];
+    mainPanel.innerHTML = '';
 
     // 2. Parse JSON và đẩy toàn bộ dữ liệu vào mảng
     sheetData.forEach((id, itemString) => {
@@ -351,6 +352,7 @@ const imageDict = new LoadDataForDict(scriptURL, "Image");
 
 function updateImageData() {
     let dateDict = {};
+    imageContents.innerHTML = '';
     imageDict.forEach((key, value) => {
         const vl = JSON.parse(value);
         if (!dateDict[vl.date]) { dateDict[vl.date] = []; }
