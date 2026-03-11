@@ -47,12 +47,14 @@ const closeImageBtn = document.getElementById('image-input-bar-btn-close');
 const loadImageInput = document.getElementById('image-input-item-load');
 const imageContents = document.getElementById('image-input-bar-contents');
 const imageBar = document.getElementById('image-input-bar');
+const searchInput = document.getElementById('search-input');
 
 let openPanel = null;
 let isVertical = true;
 let isCmtOpen = false;
 let openSpMenuStyle = "add new";
-let oldSrc = '';
+let loadSetup = false;
+let loadSheet = false;
 let imgAddCmt = false;
 const tokenKey = 'userToken-SuhaoApp';
 let token = localStorage.getItem(tokenKey);
@@ -104,8 +106,6 @@ const activeTimers = {};
 function playRunForTime(func, time, id) {
     // Kiểm tra xem ID này đã được chạy trước đó chưa để tránh việc tạo ra nhiều vòng lặp trùng lặp
     if (activeTimers[id]) { return; }
-
-    // Sử dụng setInterval và lưu ID của bộ đếm vào Object
     activeTimers[id] = setInterval(func, time);
 }
 
@@ -114,11 +114,9 @@ function playRunForTime(func, time, id) {
  * @param {string|number} id - Mã định danh của hàm cần dừng
  */
 function stopRunForTime(id) {
-    // Kiểm tra xem ID có tồn tại trong danh sách đang chạy không
     if (activeTimers[id]) {
-        clearInterval(activeTimers[id]); // Xóa vòng lặp
-        delete activeTimers[id];         // Xóa khỏi bộ nhớ lưu trữ
-        console.log(`Đã dừng hàm với ID '${id}'.`);
+        clearInterval(activeTimers[id]);
+        delete activeTimers[id];
     } else {
         console.warn(`Không tìm thấy hàm nào đang chạy với ID '${id}'.`);
     }
@@ -161,6 +159,82 @@ function setLoadingBarValue(value, text = '') {
     loadingText.innerText = `${text}${value}%`;
 }
 
+function checkSearch(item) {
+    const search = searchInput.value.toLowerCase().trim();
+    // Đã fix lỗi logic
+    if (search === '') return true;
+
+    if (search[0] === '#') {
+        const getCode = item.querySelector('.main-item-code')?.textContent.toLowerCase() || '';
+        return getCode.includes(search);
+    } else {
+        const getName = item.querySelector('.main-item-name')?.textContent.toLowerCase() || '';
+        return getName.includes(search);
+    }
+}
+
+// Chuyển việc nhận cấu hình lọc (filterConfig) vào tham số
+function checkFilter(item, filterConfig) {
+    if (filterConfig.isActive) {
+        const spid = item.getAttribute('spid');
+        const dict = sheetData.get(spid);
+        
+        // Phòng thủ: Nếu không có dữ liệu dict hoặc date, tự động bỏ qua item này
+        if (!dict || !dict.date) return false;
+
+        const date = dict.date.split('-');
+        const year = date[0];
+        const month = date[1];
+        
+        const fashion = dict.actor;
+        const style = dict.group;
+
+        return String(month).padStart(2, '0') === filterConfig.targetMonth
+            && String(year) === filterConfig.targetYear // Đã fix toString thành String
+            && filterConfig.fashions.includes(fashion)
+            && filterConfig.styles.includes(style);
+    }
+
+    return true;
+}
+
+function loadFilterAndSearch() {
+    // 1. TÍNH TOÁN CẤU HÌNH LỌC MỘT LẦN DUY NHẤT Ở ĐÂY
+    // Chú ý: Hãy chắc chắn toBoolean() ở các bước trước đã xử lý đúng giá trị này
+    const isFilterActive = setupData.get('filterChecked') || checkedSetup.checked;
+    
+    let activeStyles = [];
+    let activeFashions = [];
+
+    if (isFilterActive) {
+        setupData.get('stylesSetup')?.forEach(item => {
+            if (item.checked) activeStyles.push(item.value);
+        });
+        
+        setupData.get('fashionsSetup')?.forEach(item => {
+            if (item.checked) activeFashions.push(item.value);
+        });
+    }
+
+    // Gom dữ liệu lọc vào một object để truyền đi cho gọn
+    const filterConfig = {
+        isActive: isFilterActive,
+        targetMonth: String(monthSelect.value).padStart(2, '0'),
+        targetYear: String(yearSelect.value),
+        styles: activeStyles,
+        fashions: activeFashions
+    };
+
+    // 2. CHẠY VÒNG LẶP CHO TỪNG ITEM
+    [...mainPanel.children].forEach(item => {
+        // Truyền filterConfig vào để dùng lại, không cần tính toán lại nữa
+        const isMatch = checkFilter(item, filterConfig) && checkSearch(item);
+        item.classList.toggle('hidden', !isMatch);
+    });
+}
+
+searchInput.addEventListener('input', loadFilterAndSearch);
+
 const setupData = new LoadDataForDict(scriptURL, "Setup");
 const debouncedSave = debounce(() => setupData.save(), 1000);
 
@@ -184,12 +258,14 @@ function updateSetupData() {
     monthSelect.addEventListener('change', () => {
         dateSetup.month = parseInt(monthSelect.value);
         setupData.set('dateSetup', dateSetup);
+        loadFilterAndSearch();
         debouncedSave();
     });
 
     yearSelect.addEventListener('change', () => {
         dateSetup.year = parseInt(yearSelect.value);
         setupData.set('dateSetup', dateSetup);
+        loadFilterAndSearch();
         debouncedSave();
     });
 
@@ -221,6 +297,7 @@ function updateSetupData() {
             debouncedSave();
             isChecked = checkedSetup.checked;
         }
+        loadFilterAndSearch();
     });
 
     if (!setupData.check('stylesSetup')) { setupData.set('stylesSetup', []); }
@@ -259,6 +336,7 @@ function updateSetupData() {
             if (checkbox) checkbox.checked = stylesSetupAll.checked;
         });
         setupData.set('stylesSetup', stylesSetupData);
+        loadFilterAndSearch();
         debouncedSave();
     });
 
@@ -298,8 +376,10 @@ function updateSetupData() {
             if (checkbox) checkbox.checked = fashionsSetupAll.checked;
         });
         setupData.set('fashionsSetup', fashionsSetupData);
+        loadFilterAndSearch();
         debouncedSave();
     });
+    loadSetup = true;
 }
 
 setupData.init().then(updateSetupData);
@@ -334,6 +414,7 @@ function updateSheetData() {
     });
 
     closeLoadingBar();
+    loadSheet = true;
 }
 
 sheetData.init().then(updateSheetData);
@@ -377,6 +458,7 @@ function updateImageData() {
         images.forEach((image) => {
             const imageDiv = document.createElement('div');
             imageDiv.classList.add('image-item-bar');
+            imageDiv.title = image.name;
             imageDiv.innerHTML = `
                 <img src="${image.img}" alt="${image.name}">
                 <p>${image.name}</p>
@@ -462,8 +544,6 @@ loadImageInput.addEventListener('change', async () => {
     // Lặp qua từng file đã chọn
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
-        // Cập nhật thanh tiến trình hiển thị số thứ tự ảnh đang xử lý
         setLoadingBarValue(0, `Đang xử lý ảnh ${i + 1}/${files.length}... `);
 
         // Bọc FileReader trong Promise để chờ đọc xong mới đi tiếp
@@ -497,6 +577,7 @@ loadImageInput.addEventListener('change', async () => {
 
             const imageDiv = document.createElement('div');
             imageDiv.classList.add('image-item-bar');
+            imageDiv.title = newItem.name;
             imageDiv.innerHTML = `
                 <img src="${newItem.img}" alt="${newItem.name}">
                 <p>${newItem.name}</p>
@@ -515,11 +596,8 @@ loadImageInput.addEventListener('change', async () => {
         }
     }
 
-    // Sau khi vòng lặp hoàn tất (đã upload xong tất cả), mới lưu và đóng loading bar
     imageDict.save();
     closeLoadingBar();
-    
-    // Reset lại input để có thể chọn lại cùng 1 danh sách ảnh nếu muốn
     loadImageInput.value = ''; 
 });
 
@@ -589,7 +667,7 @@ function addMainItem(id, item, isEdit = false) {
     Ngày: ${item.date}<br>
     Size: ${item.size}<br><br>
     ${loadSL}<br>
-    <span style="font-weight: bold;">#${item.code}<br></span>
+    <span style="font-weight: bold;" class="main-item-code">#${item.code}<br></span>
     <span style="color: red;">- ${item.actor}<br>
     - ${item.group}</span>`;
     content.appendChild(thongtin);
@@ -627,6 +705,8 @@ function addMainItem(id, item, isEdit = false) {
     inputImgBtn.classList.add('main-item-input-img');
     inputImgBtn.onclick = () => { 
         imageBar.style.display = 'flex';
+        const selected = document.querySelector('.image-item-bar.selected');
+        if (selected) { selected.classList.remove('selected'); }
         imgAddCmt = true;
     };
     repBar.appendChild(inputImgBtn);
@@ -823,7 +903,10 @@ function addSetupItem(EL, dict, key, func, index) {
     label.setAttribute('for', newID);
     div.appendChild(label);
 
-    checkbox.addEventListener('change', () => { func(checkbox); });
+    checkbox.addEventListener('change', () => { 
+        func(checkbox);
+        loadFilterAndSearch();
+    });
 }
 
 const editMenu = document.getElementById('editMenu');
@@ -861,6 +944,8 @@ function openEditMenu(list, func) {
 
 addSpImgBox.addEventListener('click', () => {
     imageBar.style.display = 'flex';
+    const selected = document.querySelector('.image-item-bar.selected');
+    if (selected) { selected.classList.remove('selected'); }
     imgAddCmt = false;
 });
 
@@ -1009,8 +1094,17 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
 document.addEventListener('DOMContentLoaded', () => {
     resizeEvent();
     openLoadingBar();
+    
+    playRunForTime(() => {
+        if (loadSetup && loadSheet) {
+            loadFilterAndSearch();
+            stopRunForTime('load');
+        }
+    }, 500, 'load')
+
     playRunForTimeToLoop((count) => { 
         setLoadingBarValue(count, "Setting up data... ");
     }, 50, 100);
 });
+
 window.addEventListener('resize', resizeEvent);

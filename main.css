@@ -1,9 +1,10 @@
 :root {
-    --btn-icon-size: calc(var(--panel-size) * 0.03);
+    --btn-icon-size: calc(var(--panel-size) * 0.04);
     --header-height: calc(var(--panel-size) * 0.089);
     --panel-height: calc(100% - var(--header-height) - var(--panel-size) * 0.01);
-    --panel-width: calc(var(--panel-size) - 4.4vh);
-    --border-radius: calc(var(--panel-size) * 0.012);
+    --btn-panel-size: calc(var(--panel-size) * 0.09);
+    --panel-width: calc(var(--panel-size) - var(--panel-size) * 0.02 - var(--btn-panel-size));
+    --border-radius: calc(var(--panel-size) * 0.01);
 }
 
 body {
@@ -92,8 +93,8 @@ select {
 
 #btn-menu {
     background-color: #a1a9aa80;
-    width: calc(var(--panel-size) * 0.07);
-    height: calc(var(--panel-size) * 0.21);
+    width: var(--btn-panel-size);
+    height: calc(var(--btn-panel-size) * 3);
     top: calc(var(--panel-size) * 0.11);
     left: calc(var(--panel-size) * 0.007);
     position: absolute;
@@ -532,6 +533,10 @@ select {
     flex-shrink: 0;
 }
 
+.main-item.hidden {
+    display: none;
+}
+
 .main-item-img {
     max-height: 100%;
     border-radius: var(--border-radius);
@@ -586,32 +591,30 @@ select {
     font-size: calc(var(--panel-size) * 0.0415);
     font-weight: normal;
     text-align: left;
-    overflow: hidden;
     white-space: nowrap;
     margin-top: calc(var(--panel-size) * 0.01);
-    text-overflow: auto;
     overflow: auto;
 }
 
 .main-item-btns {
     position: absolute;
     z-index: 10;
-    right: calc(var(--panel-size) * 0.02);
-    bottom: calc(var(--panel-size) * 0.01);
-    height: calc(var(--panel-size) * 0.07);
+    right: calc(var(--panel-size) * 0.025);
+    bottom: calc(var(--panel-size) * 0.009);
+    height: var(--btn-panel-size);
     display: flex;
     flex-direction: row;
 }
 
 .main-item-btns > div:hover {
-    background-color: rgb(127, 246, 255);
+    background-color: rgba(150, 150, 150, 0.527);
 }
 
 .main-item-cmt-btn {
-    width: calc(var(--panel-size) * 0.07);
-    height: calc(var(--panel-size) * 0.07);
+    width: var(--btn-panel-size);
+    height: var(--btn-panel-size);
     background-image: url('icon/compose.png');
-    background-size: calc(var(--panel-size) * 0.04);
+    background-size: calc(var(--panel-size) * 0.06);
     background-repeat: no-repeat;
     background-position: center;
     background-color: transparent;
@@ -620,10 +623,10 @@ select {
 }
 
 .main-item-edit-btn {
-    width: calc(var(--panel-size) * 0.07);
-    height: calc(var(--panel-size) * 0.07);
+    width: var(--btn-panel-size);
+    height: var(--btn-panel-size);
     background-image: url('icon/setup.png');
-    background-size: calc(var(--panel-size) * 0.04);
+    background-size: calc(var(--panel-size) * 0.06);
     background-repeat: no-repeat;
     background-position: center;
     background-color: transparent;
@@ -632,10 +635,10 @@ select {
 }
 
 .main-item-delete-btn {
-    width: calc(var(--panel-size) * 0.07);
-    height: calc(var(--panel-size) * 0.07);
+    width: var(--btn-panel-size);
+    height: var(--btn-panel-size);
     background-image: url('icon/trash.png');
-    background-size: calc(var(--panel-size) * 0.04);
+    background-size: calc(var(--panel-size) * 0.06);
     background-repeat: no-repeat;
     background-position: center;
     background-color: transparent;
@@ -817,12 +820,14 @@ select {
 
 #image-input-bar-btns {
     width: 100%;
+    height: 100%;
     height: calc(var(--panel-size) * 0.09);
     display: flex;
     flex-direction: row;
     justify-content: left;
     align-items: center;
     border-top: #0000007c solid 1px;
+    margin-bottom: calc(var(--panel-size) * 0.01);
 }
 
 #image-input-bar-btns > div {
@@ -852,8 +857,6 @@ select {
 
 .image-item-bar > img {
     width: 100%;
-    height: 100%;
-    border-radius: var(--border-radius);
 }
 
 .image-item-bar > p {
@@ -869,7 +872,6 @@ select {
 }
 
 .image-item-bar.selected {
-    background-color: #3d3c94;
-    border-radius: var(--border-radius);
+    background-color: #929292;
     color: #ffffff;
 }

@@ -150,8 +150,8 @@ export class LoadDataForDict {
         } 
         
         // Xử lý boolean
-        if (value === 'TRUE' || value === 'FALSE') {
-            return value === 'TRUE';
+        if (value === 'TRUE' || value === 'FALSE' || value === 'true' || value === 'false') {
+            return value === 'TRUE' || value === 'true';
         }
 
         return value;
