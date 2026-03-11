@@ -161,15 +161,6 @@ function setLoadingBarValue(value, text = '') {
     loadingText.innerText = `${text}${value}%`;
 }
 
-async function removeImage(imageId) {
-    const oldFileIdMatch = imageId.src.match(/[-\w]{25,}/);
-            
-    if (oldFileIdMatch) {
-        await deleteImageFromDrive(oldFileIdMatch[0]);
-        console.log("Đang xóa ảnh cũ trên Drive:", oldFileIdMatch[0]);
-    }
-}
-
 const setupData = new LoadDataForDict(scriptURL, "Setup");
 const debouncedSave = debounce(() => setupData.save(), 1000);
 
@@ -311,7 +302,7 @@ function updateSetupData() {
     });
 }
 
-setupData.init().then(() => { updateSetupData() });
+setupData.init().then(updateSetupData);
 // setupData.addChangeSheetCallback('Setup', updateSetupData);
 
 const sheetData = new LoadDataForDict(scriptURL, "Sheet1");
@@ -345,26 +336,38 @@ function updateSheetData() {
     closeLoadingBar();
 }
 
-sheetData.init().then(() => { updateSheetData() });
+sheetData.init().then(updateSheetData);
 sheetData.addChangeSheetCallback('SheetData', updateSheetData);
 
 const imageDict = new LoadDataForDict(scriptURL, "Image");
 
 function updateImageData() {
     let dateDict = {};
+    let dateList = [];
     imageContents.innerHTML = '';
     imageDict.forEach((key, value) => {
         const vl = JSON.parse(value);
-        if (!dateDict[vl.date]) { dateDict[vl.date] = []; }
+        if (!dateDict[vl.date]) { 
+            dateDict[vl.date] = [];
+            dateList.push(vl.date);
+        }
         dateDict[vl.date].push(vl);
     });
 
-    for (const [date, images] of Object.entries(dateDict)) {
-        const dateStr = new Date(date).toString().split(' ').slice(0, 4).join(' ');
+    dateList.sort((a, b) => {
+        const dateA = new Date(a);
+        const dateB = new Date(b);
+        return dateB - dateA;
+    });
+
+    dateList.forEach((date) => {
+        const images = dateDict[date];
+        const dateStrFirst = new Date(date).toString().split(' ').slice(0, 1)
+        const dateStr = `${dateStrFirst} ${date.split('-').reverse().join('/')}`;
         const dateDiv = document.createElement('div');
         dateDiv.classList.add('image-date-bar');
         dateDiv.setAttribute('data-date', date);
-        dateDiv.innerHTML = `<p style="font-size: calc(var(--panel-size) * 0.042); font-weight: normal; font-style: italic;">${dateStr}</p>`;
+        dateDiv.innerHTML = `<p>${dateStr}</p>`;
         imageContents.appendChild(dateDiv);
 
         const contentDiv = document.createElement('div');
@@ -388,10 +391,10 @@ function updateImageData() {
                 imageDiv.classList.add('selected');
             })
         });
-    }
+    })
 }
 
-imageDict.init().then(() => { updateImageData() });
+imageDict.init().then(updateImageData);
 imageDict.addChangeSheetCallback('Image', updateImageData);
 
 addImageBtn.addEventListener('click', () => {
@@ -438,8 +441,9 @@ loadImageInput.addEventListener('change', async () => {
     if (files.length === 0) return;
     openLoadingBar();
 
-    const date = new Date().toLocaleDateString();
-    const dateStr = new Date(date).toString().split(' ').slice(0, 4).join(' ');
+    const date = new Date().toISOString().split('T')[0];
+    const dateStrFirst = new Date(date).toString().split(' ').slice(0, 1)
+    const dateStr = `${dateStrFirst} ${date.split('-').reverse().join('/')}`;
     let dateContent = imageContents.querySelector(`[data-date="${date}"]`);
     if (!dateContent) {
         dateContent = document.createElement('div');

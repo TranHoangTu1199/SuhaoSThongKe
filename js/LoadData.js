@@ -28,7 +28,6 @@ export async function GetData(URL, page = "Sheet1") {
         const textData = await response.json();
         return textData; // Trả về dữ liệu đã phân tích
     } catch (error) {
-        console.error('Lỗi khi phân tích dữ liệu:', error.message);
         return [];
     }
 }
@@ -206,7 +205,7 @@ export class LoadDataForDict {
                         callback(this.data);
                     }
                 } catch (error) {
-                    console.error("Lỗi khi kiểm tra Sheet update:", error);
+                    // Xuất lý lần gọi đầu tiên
                 }
             }
 
