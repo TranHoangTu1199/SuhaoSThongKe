@@ -887,7 +887,7 @@ select {
 #image-input-search-bar {
     width: 100%;
     padding: calc(var(--panel-size) * 0.015);
-    height: calc(var(--panel-size) * 0.09);
+    height: calc(var(--panel-size) * 0.11);
 }
 
 #image-search-input {
