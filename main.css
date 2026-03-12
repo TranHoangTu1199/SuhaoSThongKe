@@ -256,7 +256,7 @@ select {
 }
 
 #edit-menu-btns > :nth-child(2) {
-    margin-left: calc(var(--panel-size) * 0.34);
+    margin-left: calc(var(--panel-size) * 0.25);
 }
 
 #edit-menu-btns > div:hover {
@@ -859,12 +859,16 @@ select {
     width: 100%;
 }
 
-.image-item-bar > p {
+.image-item-bar > div {
     text-align: center;
     overflow: hidden;
     word-wrap: normal;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+.image-item-bar > div.editable {
+    text-overflow: clip;
 }
 
 .image-item-bar:hover {
@@ -874,4 +878,23 @@ select {
 .image-item-bar.selected {
     background-color: #929292;
     color: #ffffff;
+}
+
+.image-item-bar.hidden {
+    display: none;
+}
+
+#image-input-search-bar {
+    width: 100%;
+    padding: calc(var(--panel-size) * 0.015);
+    height: calc(var(--panel-size) * 0.09);
+}
+
+#image-search-input {
+    padding: calc(var(--panel-size) * 0.01);
+    width: 100%;
+    height: 100%;
+    font-size: calc(var(--panel-size) * 0.04);
+    border-radius: calc(var(--panel-size) * 0.04);
+    overflow: hidden;
 }

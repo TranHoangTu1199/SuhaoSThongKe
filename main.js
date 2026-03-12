@@ -48,6 +48,7 @@ const loadImageInput = document.getElementById('image-input-item-load');
 const imageContents = document.getElementById('image-input-bar-contents');
 const imageBar = document.getElementById('image-input-bar');
 const searchInput = document.getElementById('search-input');
+const imageSearchInput = document.getElementById('image-search-input');
 
 let openPanel = null;
 let isVertical = true;
@@ -201,7 +202,7 @@ function checkFilter(item, filterConfig) {
 function loadFilterAndSearch() {
     // 1. TÍNH TOÁN CẤU HÌNH LỌC MỘT LẦN DUY NHẤT Ở ĐÂY
     // Chú ý: Hãy chắc chắn toBoolean() ở các bước trước đã xử lý đúng giá trị này
-    const isFilterActive = setupData.get('filterChecked') || checkedSetup.checked;
+    const isFilterActive = checkedSetup.checked;
     
     let activeStyles = [];
     let activeFashions = [];
@@ -293,8 +294,6 @@ function updateSetupData() {
     let isChecked = checkedSetup.checked;
     checkedSetup.addEventListener('change', () => {
         if (checkedSetup.checked !== isChecked) {
-            setupData.set('filterChecked', checkedSetup.checked);
-            debouncedSave();
             isChecked = checkedSetup.checked;
         }
         loadFilterAndSearch();
@@ -432,6 +431,7 @@ function updateImageData() {
             dateDict[vl.date] = [];
             dateList.push(vl.date);
         }
+        vl.id = key;
         dateDict[vl.date].push(vl);
     });
 
@@ -459,11 +459,53 @@ function updateImageData() {
             const imageDiv = document.createElement('div');
             imageDiv.classList.add('image-item-bar');
             imageDiv.title = image.name;
-            imageDiv.innerHTML = `
-                <img src="${image.img}" alt="${image.name}">
-                <p>${image.name}</p>
-            `;
+            imageDiv.innerHTML = `<img src="${image.img}" alt="${image.name}">`;
             contentDiv.appendChild(imageDiv);
+
+            const imageName = document.createElement('div');
+            imageName.textContent = image.name;
+            imageDiv.appendChild(imageName);
+
+            imageName.addEventListener('dblclick', () => {
+                imageName.contentEditable = true;
+                imageName.classList.add('editable');
+            });
+
+            imageName.addEventListener('blur', () => {
+                imageName.contentEditable = false;
+                image.name = imageName.textContent;
+                imageDiv.title = image.name;
+                imageDict.set(image.id, image);
+                imageDict.save();
+                imageName.classList.remove('editable');
+            });
+
+            imageName.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    imageName.contentEditable = false;
+                    image.name = imageName.textContent;
+                    imageDiv.title = image.name;
+                    imageDict.set(image.id, image);
+                    imageDict.save();
+                    imageName.classList.remove('editable');
+                }
+            })
+
+            let pressTimer;
+            imageName.addEventListener('touchstart', () => {
+                pressTimer = setTimeout(() => {
+                    imageName.contentEditable = true;
+                    imageName.classList.add('editable');
+                }, 600);
+            })
+
+            imageName.addEventListener('touchend', () => {
+                clearTimeout(pressTimer);
+            })
+
+            imageName.addEventListener('touchmove', () => {
+                clearTimeout(pressTimer);
+            })
 
             imageDiv.addEventListener('click', () => {
                 // Xóa selected class cơ bản
@@ -485,6 +527,15 @@ addImageBtn.addEventListener('click', () => {
 
 closeImageBtn.addEventListener('click', () => {
     imageBar.style.display = 'none';
+});
+
+imageSearchInput.addEventListener('input', () => {
+    const searchValue = imageSearchInput.value.toLowerCase();
+    const imageItems = document.querySelectorAll('.image-item-bar');
+    imageItems.forEach((imageItem) => {
+        const imageName = imageItem.title.toLowerCase();
+        imageItem.classList.toggle('hidden', !imageName.includes(searchValue));
+    });
 });
 
 removeImageBtn.addEventListener('click', async () => {
@@ -572,17 +623,60 @@ loadImageInput.addEventListener('change', async () => {
             const newItem = {
                 name: file.name,
                 img: img,
-                date: date
+                date: date,
+                id: `${file.name} - ${date}`,
             };
 
             const imageDiv = document.createElement('div');
             imageDiv.classList.add('image-item-bar');
             imageDiv.title = newItem.name;
-            imageDiv.innerHTML = `
-                <img src="${newItem.img}" alt="${newItem.name}">
-                <p>${newItem.name}</p>
-            `;
+            imageDiv.innerHTML = `<img src="${newItem.img}" alt="${newItem.name}">`;
             itemsContent.appendChild(imageDiv);
+
+            const imageName = document.createElement('div');
+            imageName.textContent = newItem.name;
+            imageDiv.appendChild(imageName);
+
+            imageName.addEventListener('dblclick', () => {
+                imageName.contentEditable = true;
+                imageName.classList.add('editable');
+            });
+
+            imageName.addEventListener('blur', () => {
+                imageName.contentEditable = false;
+                newItem.name = imageName.textContent;
+                imageDiv.title = newItem.name;
+                imageDict.set(newItem.id, newItem);
+                imageDict.save();
+                imageName.classList.remove('editable');
+            });
+
+            imageName.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    imageName.contentEditable = false;
+                    newItem.name = imageName.textContent;
+                    imageDiv.title = newItem.name;
+                    imageDict.set(newItem.id, newItem);
+                    imageDict.save();
+                    imageName.classList.remove('editable');
+                }
+            });
+
+            let pressTimer;
+            imageName.addEventListener('touchstart', () => {
+                pressTimer = setTimeout(() => {
+                    imageName.contentEditable = true;
+                    imageName.classList.add('editable');
+                }, 500);
+            });
+
+            imageName.addEventListener('touchend', () => {
+                clearTimeout(pressTimer);
+            });
+
+            imageName.addEventListener('touchmove', () => {
+                clearTimeout(pressTimer);
+            });
 
             imageDiv.addEventListener('click', () => {
                 // Xóa selected class cơ bản
@@ -592,7 +686,7 @@ loadImageInput.addEventListener('change', async () => {
                 imageDiv.classList.add('selected');
             })
 
-            imageDict.set(`${newItem.name} - ${newItem.date}`, newItem);
+            imageDict.set(`${newItem.id}`, newItem);
         }
     }
 
