@@ -10,7 +10,10 @@
     <div id="app">
         <div id="header">
             <div id="header-icon"></div>
-            <input type="text" id="search-input" placeholder="Tìm kiếm...">
+            <input type="search" id="search-input" placeholder="Tìm kiếm..." autocomplete="off">
+            <div id="login-acc-avt-bar">
+                <div id="login-acc-avt"></div>
+            </div>
         </div>
         <div id="main"></div>
     </div>
@@ -119,7 +122,7 @@
     </div>
     <div id="image-input-bar">
         <div id="image-input-search-bar">
-            <input type="text" id="image-search-input" placeholder="Nhập tên ảnh ...">
+            <input type="search" id="image-search-input" placeholder="Nhập tên ảnh ...">
         </div>
         <div id="image-input-bar-contents"></div>
         <div id="image-input-bar-btns">
@@ -128,6 +131,82 @@
             <div id="image-input-bar-btn-remove">Xóa</div>
             <div id="image-input-bar-btn-apply">Xác nhận</div>
             <div id="image-input-bar-btn-close">Đóng</div>
+        </div>
+    </div>
+    <div id="log-box">
+        <div id="log-box-avt-box">
+            <div id = "log-box-avt"></div>
+        </div>
+        <div id="log-box-content">
+            <div id="log-box-username">User name</div>
+            <div class="log-set-bar">
+                <div id="log-box-login">Đăng nhập</div>|
+                <div id="log-box-register">Đăng ký</div>
+            </div>
+            <div class="log-set-bar">
+                <div id="log-box-edit">Chỉnh sửa</div>|
+                <div id="log-box-logout">Đăng xuất</div>
+            </div>
+        </div>
+    </div>
+    <div id="login-user-menu" class="set-user-menu">
+        <form id="login-user-menu-contents">
+            <div>
+                Tài khoản:
+                <input type="text" class="user" autocomplete="username" placeholder="Tên tài khoản">
+            </div>
+            <div>
+                Mật khẩu:
+                <input type="password" class="pass" autocomplete="current-password" placeholder="Mật khẩu">
+            </div>
+            <p></p>
+        </form>
+        <div id="login-user-menu-btns">
+            <div class="apply">Xác nhận</div>|
+            <div class="close">Đóng</div>
+        </div>
+    </div>
+    <div id="register-user-menu" class="set-user-menu">
+        <form id="register-user-menu-contents">
+            <div>
+                Tài khoản:
+                <input type="text" class="user" autocomplete="username" placeholder="Tài khoản">
+            </div>
+            <div>
+                Mật khẩu:
+                <input type="password" class="pass" autocomplete="new-password" placeholder="Mật khẩu">
+            </div>
+            <div>
+                NL mật khẩu:
+                <input type="password" class="repass" autocomplete="new-password" placeholder="Nhập lại mật khẩu">
+            </div>
+            <p></p>
+        </form>
+        <div id="register-user-menu-btns">
+            <div class="apply">Xác nhận</div>|
+            <div class="close">Đóng</div>
+        </div>
+    </div>
+    <div id="edit-user-menu" class="set-user-menu">
+        <form id="edit-user-menu-contents">
+            <img src="icon/user.png" alt="">
+            <div>
+                Tài khoản:
+                <input type="text" class="user" autocomplete="username" placeholder="Tài khoản">
+            </div>
+            <div>
+                Mật khẩu:
+                <input type="password" class="pass" autocomplete="new-password" placeholder="Mật khẩu">
+            </div>
+            <div>
+                NL mật khẩu:
+                <input type="password" class="repass" autocomplete="new-password" placeholder="Nhập lại mật khẩu">
+            </div>
+            <p></p>
+        </form>
+        <div id="edit-user-menu-btns">
+            <div class="apply">Xác nhận</div>|
+            <div class="close">Đóng</div>
         </div>
     </div>
     <script type="module" src="main.js"></script> 

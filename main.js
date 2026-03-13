@@ -1,4 +1,5 @@
 import { LoadDataForDict, LoadDataForList, uploadImageToDrive, deleteImageFromDrive } from './js/LoadData.js';
+import { LoginUser } from './js/LogUser.js';
 //set innit width/height for css
 const initWidth = window.innerWidth;
 const initHeight = window.innerHeight;
@@ -23,7 +24,6 @@ const stylesSetupAll = document.getElementById('checkbox-style-all');
 const fashionsSetupAll = document.getElementById('checkbox-fashion-all');
 const stylesSetup = document.getElementById('styles-setup');
 const fashionsSetup = document.getElementById('fashions-setup');
-const addSpImgBox = document.getElementById('add-sp-image-box');
 const addSpMenu = document.getElementById('addSpMenu');
 const addSpMenuAddBtn = document.getElementById('sp-btn-add');
 const addSpMenuApplyBtn = document.getElementById('sp-btn-apply');
@@ -49,6 +49,7 @@ const imageContents = document.getElementById('image-input-bar-contents');
 const imageBar = document.getElementById('image-input-bar');
 const searchInput = document.getElementById('search-input');
 const imageSearchInput = document.getElementById('image-search-input');
+const setUserImg = document.getElementById('edit-user-menu-contents').querySelector('img');
 
 let openPanel = null;
 let isVertical = true;
@@ -56,34 +57,47 @@ let isCmtOpen = false;
 let openSpMenuStyle = "add new";
 let loadSetup = false;
 let loadSheet = false;
-let imgAddCmt = false;
+let addImgStyle = 'default';
 const tokenKey = 'userToken-SuhaoApp';
-let token = localStorage.getItem(tokenKey);
-let userDict = {};
+let myStorage = {
+    token: localStorage.getItem(tokenKey),
+    tokenDict: {},
 
-if (!token) {
+    setToken(key, value) {
+        this.tokenDict[key] = value;
+        localStorage.setItem(tokenKey, JSON.stringify(this.tokenDict));
+    },
+
+    getToken(key) {
+        return this.tokenDict[key];
+    },
+
+    checkToken(key) {
+        return key in this.tokenDict;
+    },
+
+    removeToken(key) {
+        delete this.tokenDict[key];
+        localStorage.setItem(tokenKey, JSON.stringify(this.tokenDict));
+    }
+}
+
+if (!myStorage.token) {
     localStorage.setItem(tokenKey, '{}');
+    myStorage.token = '{}';
+    myStorage.tokenDict = {};
 } else {
-    userDict = JSON.parse(token);
+    myStorage.tokenDict = JSON.parse(myStorage.token);
 }
 
-function getUserToken(key) {
-    return userDict[key];
-}
-
-function setUserToken(key, value) {
-    userDict[key] = value;
-    localStorage.setItem(tokenKey, JSON.stringify(userDict));
-}
-
-function checkUserToken(key) {
-    return key in userDict;
-}
-
-function removeUserToken(key) {
-    delete userDict[key];
-    localStorage.setItem(tokenKey, JSON.stringify(userDict));
-}
+const userData = new LoadDataForDict(scriptURL, "User");
+const logUserData = new LoginUser(userData, myStorage);
+userData.init().then(() => {
+    const userName = myStorage.getToken('userName');
+    const userPass = myStorage.getToken('userPass');
+    logUserData.login(userName, userPass);
+    if (logUserData.loging) logUserData.setLogin();
+})
 
 function debounce(func, timeout = 500) {
     let timer;
@@ -98,22 +112,12 @@ function debounce(func, timeout = 500) {
 // Tạo một Object để lưu trữ các interval ID
 const activeTimers = {};
 
-/**
- * Bắt đầu chạy lặp lại một hàm
- * @param {Function} func - Hàm cần chạy
- * @param {number} time - Thời gian lặp lại (milliseconds)
- * @param {string|number} id - Mã định danh để quản lý
- */
 function playRunForTime(func, time, id) {
     // Kiểm tra xem ID này đã được chạy trước đó chưa để tránh việc tạo ra nhiều vòng lặp trùng lặp
     if (activeTimers[id]) { return; }
     activeTimers[id] = setInterval(func, time);
 }
 
-/**
- * Dừng chạy hàm
- * @param {string|number} id - Mã định danh của hàm cần dừng
- */
 function stopRunForTime(id) {
     if (activeTimers[id]) {
         clearInterval(activeTimers[id]);
@@ -122,12 +126,7 @@ function stopRunForTime(id) {
         console.warn(`Không tìm thấy hàm nào đang chạy với ID '${id}'.`);
     }
 }
-/**
- * Chạy lặp lại một hàm theo số lần chỉ định rồi tự dừng
- * @param {Function} func - Hàm cần chạy
- * @param {number} time - Thời gian lặp lại (milliseconds)
- * @param {number} loop - Số lần lặp lại
- */
+
 function playRunForTimeToLoop(func, time, loop) {
     // Nếu số lần lặp <= 0 thì không làm gì cả
     if (loop <= 0) return;
@@ -540,7 +539,7 @@ imageSearchInput.addEventListener('input', () => {
 
 removeImageBtn.addEventListener('click', async () => {
     const selected = document.querySelector('.image-item-bar.selected');
-    const alt = selected.querySelector('p').textContent;
+    const alt = selected.querySelector('div').textContent;
     const date = selected.closest('.image-date-bar').getAttribute('data-date');
     const id = `${alt} - ${date}`;
     if (selected) {
@@ -557,14 +556,22 @@ removeImageBtn.addEventListener('click', async () => {
 applyImageBtn.addEventListener('click', () => {
     const selected = document.querySelector('.image-item-bar.selected');
     if (selected) {
-        if (imgAddCmt) {
+        if (addImgStyle === 'cmt') {
             // Thêm cơ bản
-        } else {
+        } else if (addImgStyle === 'default') {
             const img = selected.querySelector('img').src;
             addSpImageBox.src = img;
+        } else {
+            const img = selected.querySelector('img').src;
+            setUserImg.src = img;
         }
     }
     imageBar.style.display = 'none';
+})
+
+setUserImg.addEventListener('click', () => {
+    imageBar.style.display = 'flex';
+    addImgStyle = 'user';
 })
 
 loadImageInput.addEventListener('change', async () => {
@@ -801,7 +808,7 @@ function addMainItem(id, item, isEdit = false) {
         imageBar.style.display = 'flex';
         const selected = document.querySelector('.image-item-bar.selected');
         if (selected) { selected.classList.remove('selected'); }
-        imgAddCmt = true;
+        addImgStyle = 'cmt';
     };
     repBar.appendChild(inputImgBtn);
 
@@ -855,6 +862,7 @@ function addMainItem(id, item, isEdit = false) {
 
 function OpenAddSpMenu(setupData, setup) {
     addSpMenu.style.display = 'flex';
+    document.getElementById('app').inert = true;
     const stylesSetup = setupData.get('stylesSetup');
     const fashionsSetup = setupData.get('fashionsSetup');
     addSpActorInput.innerHTML = '';
@@ -1036,11 +1044,11 @@ function openEditMenu(list, func) {
     };
 }
 
-addSpImgBox.addEventListener('click', () => {
+addSpImageBox.addEventListener('click', () => {
     imageBar.style.display = 'flex';
     const selected = document.querySelector('.image-item-bar.selected');
     if (selected) { selected.classList.remove('selected'); }
-    imgAddCmt = false;
+    addImgStyle = 'default';
 });
 
 const closeEditMenuBtn = document.getElementById('edit-menu-btn-close');
@@ -1082,6 +1090,7 @@ addBtnItem.addEventListener('click', () => {
 
 addSpMenuCloseBtn.addEventListener('click', async () => {
     addSpMenu.style.display = 'none';
+    document.getElementById('app').inert = false;
 });
 
 addSpMenuAddBtn.addEventListener('click', () => {
@@ -1145,6 +1154,7 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
 
         addMainItem(id, newItems);
         addSpMenu.style.display = 'none';
+        document.getElementById('app').inert = false;
         sheetData.set(id, newItems);
         debouncedSaveSheet();
     } else {
@@ -1178,6 +1188,7 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
         }
 
         addSpMenu.style.display = 'none';
+        document.getElementById('app').inert = false;
         addMainItem(id, newItems, true);
         sheetData.remove(openSpMenuStyle);
         sheetData.set(id, newItems);
