@@ -878,17 +878,21 @@ select {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: calc(var(--panel-size) * 0.085);
+    min-height: calc(var(--panel-size) * 0.085);
+    max-height: calc(var(--panel-size) * 0.2);
     z-index: 5;
     border-top: #000000 solid 1px;
     background-color: #00000021;
     display: flex;
     flex-direction: row;
+    align-items: center;
+    justify-content: center;
     user-select: none;
+    overflow: hidden;
 }
 
 .main-item-input-img {
-    height: 100%;
+    height: calc(var(--panel-size) * 0.085);
     width: calc(var(--panel-size) * 0.085);
     background-image: url(icon/image.png);
     background-size: calc(var(--panel-size) * 0.14);
@@ -904,15 +908,22 @@ select {
 
 .main-item-rep-input {
     flex: 1;
-    height: 100%;
+    min-height: calc(var(--panel-size) * 0.085);
+    max-height: calc(var(--panel-size) * 0.2);
+    min-width: 0;
     text-align: left;
-    padding: calc(var(--panel-size) * 0.012) calc(var(--panel-size) * 0.015);
+    padding: calc(var(--panel-size) * 0.02) calc(var(--panel-size) * 0.015);
     font-size: calc(var(--panel-size) * 0.045);
     font-weight: normal;
     overflow: auto;
     text-overflow: clip;
     display: flex;
     scrollbar-width: none;
+    background-color: transparent;
+    border: none;
+    white-space: nowrap;
+    overflow: auto;
+    resize: none;
 }
 
 .main-item-rep-input:focus {
@@ -920,7 +931,7 @@ select {
 }
 
 .main-item-rep-btn {
-    height: 100%;
+    height: calc(var(--panel-size) * 0.085);
     width: calc(var(--panel-size) * 0.085);
     background-image: url(icon/paper-plane.png);
     background-size: calc(var(--panel-size) * 0.06);

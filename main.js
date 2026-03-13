@@ -812,10 +812,12 @@ function addMainItem(id, item, isEdit = false) {
     };
     repBar.appendChild(inputImgBtn);
 
-    const repInput = document.createElement('div');
+    const repInput = document.createElement('textarea');
     repInput.classList.add('main-item-rep-input');
     repInput.contentEditable = 'true';
+    repInput.placeholder = 'Nhập nội dung comment ...';
     repInput.spellcheck = false;
+    repInput.rows = 1;
     repBar.appendChild(repInput);
 
     const repBtn = document.createElement('div');
@@ -823,10 +825,15 @@ function addMainItem(id, item, isEdit = false) {
     repBar.appendChild(repBtn);
 
     repInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && e.ctrlKey) {
+            e.preventDefault();
             repBtn.click();
         }
     });
+
+    repBtn.addEventListener('click', () => {
+        repInput.value = '';
+    })
 
     later.addEventListener('click', () => {
         isCmtOpen = !isCmtOpen;
