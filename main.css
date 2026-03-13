@@ -208,6 +208,7 @@ select {
     align-content: center;
     text-overflow: ellipsis;
     white-space: nowrap;
+    overflow: hidden;
 }
 
 .set-user-menu > :nth-child(1) > img {
@@ -223,12 +224,14 @@ select {
 
 .set-user-menu > :nth-child(1) > div > input {
     flex: 1;
+    min-width: 0;
     padding: calc(var(--panel-size) * 0.001) calc(var(--panel-size) * 0.015);
     font-size: calc(var(--panel-size) * 0.04);
     border: none;
     border-bottom: #000000 1px solid;
     outline: none;
     margin-left: calc(var(--panel-size) * 0.001);
+    overflow-x: auto;
 }
 
 .set-user-menu > :nth-child(2) {
