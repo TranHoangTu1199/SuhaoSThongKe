@@ -54,6 +54,7 @@ let isVertical = true;
 let openSpMenuStyle = "add new";
 let loadSetup = false;
 let loadSheet = false;
+let loadUser = false;
 let addImgStyle = 'default';
 const tokenKey = 'userToken-SuhaoApp';
 let myStorage = {
@@ -94,6 +95,7 @@ userData.init().then(() => {
     const userPass = myStorage.getToken('userPass');
     logUserData.login(userName, userPass);
     if (logUserData.loging) logUserData.setLogin();
+    loadUser = true;
 })
 
 function debounce(func, timeout = 500) {

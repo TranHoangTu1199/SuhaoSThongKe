@@ -1214,6 +1214,15 @@ select {
     background-repeat: no-repeat
 }
 
+.main-item-cmt > :nth-child(2) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    align-items: flex-start;
+    align-content: center;
+}
+
 .main-item-cmt-note {
     display: flex;
     flex-direction: row;
@@ -1247,14 +1256,14 @@ select {
 }
 
 .main-item-cmt-comment > img {
-    width: 96%;
+    width: 98%;
     border-radius: var(--border-radius);
 }
 
 .main-item-cmt-feel-bar {
-    width: 96%;
+    width: 97%;
     height: calc(var(--panel-size) * 0.06);
-    font-size: calc(var(--panel-size) * 0.035);
+    font-size: calc(var(--panel-size) * 0.04);
     font-weight: normal;
     color: #6e6e6e;
     text-align: right;
@@ -1265,6 +1274,10 @@ select {
     align-content: center;
     margin-bottom: calc(var(--panel-size) * 0.02);
     cursor: pointer;
+}
+
+.main-item-cmt-feel-bar > div:hover {
+    background-color: #00000027;
 }
 
 .main-item-cmt-setup {
@@ -1298,16 +1311,16 @@ select {
 
 #setup-cmt-active > div {
     font-weight: 300;
-    font-size: calc(var(--panel-size) * 0.04);
+    font-size: calc(var(--panel-size) * 0.052);
     color: #000000;
     cursor: pointer;
     text-align: left;
     justify-content: center;
     align-items: center;
     align-content: center;
-    width: calc(var(--panel-size) * 0.3);
-    height: calc(var(--panel-size) * 0.06);
-    padding: calc(var(--panel-size) * 0.012);
+    width: calc(var(--panel-size) * 0.4);
+    height: calc(var(--panel-size) * 0.092);
+    padding: calc(var(--panel-size) * 0.024);
 }
 
 #setup-cmt-active > div:hover {
@@ -1340,7 +1353,7 @@ select {
 }
 
 #edit-cmt-active > textarea {
-    height: calc(var(--panel-size) * 0.4);
+    height: calc(var(--panel-size) * 0.27);
     padding: calc(var(--panel-size) * 0.01);
     font-size: calc(var(--panel-size) * 0.04);
     border-radius: var(--border-radius);
