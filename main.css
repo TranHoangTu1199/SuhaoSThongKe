@@ -269,7 +269,7 @@ select {
 #btn-menu {
     background-color: #a1a9aa80;
     width: var(--btn-panel-size);
-    height: calc(var(--btn-panel-size) * 3);
+    height: calc(var(--btn-panel-size) * 2);
     top: calc(var(--panel-size) * 0.11);
     left: calc(var(--panel-size) * 0.007);
     position: absolute;
@@ -284,7 +284,7 @@ select {
     background-repeat: no-repeat;
     background-position: center;
     width: 100%;
-    height: 33.3%;
+    height: 50%;
     border-radius: var(--border-radius);
 }
 
@@ -294,17 +294,7 @@ select {
     background-repeat: no-repeat;
     background-position: center;
     width: 100%;
-    height: 33.3%;
-    border-radius: var(--border-radius);
-}
-
-.cmd-btn-item {
-    background-image: url('icon/compose.png');
-    background-size: var(--btn-icon-size);
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 100%;
-    height: 33.3%;
+    height: 50%;
     border-radius: var(--border-radius);
 }
 
@@ -326,19 +316,6 @@ select {
     user-select: none;
     overflow-y: auto;
     overflow-x: hidden;
-}
-
-#cmdPanel {
-    background-color: #ffffff;
-    width: var(--panel-width);
-    height: var(--panel-height);
-    top: calc(var(--header-height) + var(--panel-size) * 0.005);
-    left: -100%;
-    position: absolute;
-    border-radius: var(--border-radius);
-    z-index: 10;
-    transition: 0.8s;
-    user-select: none;
 }
 
 #date-setup {
@@ -971,12 +948,11 @@ select {
 }
 
 .main-item-rep-bar {
-    /* position: absolute; */
     bottom: 0;
     left: 0;
     width: 100%;
-    min-height: calc(var(--panel-size) * 0.085);
-    max-height: calc(var(--panel-size) * 0.2);
+    min-height: calc(var(--panel-size) * 0.12);
+    max-height: calc(var(--panel-size) * 0.25);
     z-index: 5;
     border-top: #000000 solid 1px;
     background-color: #00000021;
@@ -1266,7 +1242,6 @@ select {
 .main-item-cmt-comment {
     font-weight: 500;
     font-size: calc(var(--panel-size) * 0.05);
-    margin-bottom: calc(var(--panel-size) * 0.005);
     text-align: left;
     margin-left: calc(var(--panel-size) * 0.015);
 }
@@ -1274,4 +1249,52 @@ select {
 .main-item-cmt-comment > img {
     width: 96%;
     border-radius: var(--border-radius);
+}
+
+.main-item-cmt-feel-bar {
+    width: 96%;
+    height: calc(var(--panel-size) * 0.05);
+    font-size: calc(var(--panel-size) * 0.03);
+    font-weight: normal;
+    color: #6e6e6e;
+    text-align: right;
+    display: flex;
+    flex-direction: row;
+    justify-content: right;
+    align-items: center;
+    align-content: center;
+    margin-bottom: calc(var(--panel-size) * 0.02);
+    cursor: pointer;
+}
+
+.main-item-cmt-setup {
+    font-size: calc(var(--panel-size) * 0.028);
+    font-weight: normal;
+    cursor: pointer;
+    color: #242424;
+    margin-left: calc(var(--panel-size) * 0.015);
+    height: calc(var(--panel-size) * 0.05);
+    width: calc(var(--panel-size) * 0.07);
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+}
+
+#setup-cmt-active {
+    display: none;
+    box-shadow: #000000 0px 0px calc(var(--panel-size) * 0.3) 0px;
+    position: absolute;
+    z-index: 100;
+    width: calc(var(--panel-size) * 0.3);
+    height: calc(var(--panel-size) * 0.12);
+    border-radius: var(--border-radius);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
 }

@@ -10,13 +10,11 @@ const scriptURL = 'https://script.google.com/macros/s/AKfycbxqzCDnwjefL0MuPdOulq
 
 const addBtnItem = document.querySelector('.add-btn-item');
 const setupBtnItem = document.querySelector('.setup-btn-item');
-const cmdBtnItem = document.querySelector('.cmd-btn-item');
 const btnMenu = document.getElementById('btn-menu');
 const setupPanel = document.getElementById('setupPanel');
 const dateSetupPanel = document.getElementById('date-setup');
 const monthSelect = document.getElementById('month-setup');
 const yearSelect = document.getElementById('year-setup');
-const cmdPanel = document.getElementById('cmdPanel');
 const checkedSetup = document.getElementById('checkbox-boloc');
 const stylesSetupContent = document.getElementById('styles-setup-content');
 const fashionsSetupContent = document.getElementById('fashions-setup-content');
@@ -471,8 +469,8 @@ function updateMainItem(id, item) {
     const cmtPanel = lastBar.querySelector('.main-item-comment-content');
     cmtPanel.innerHTML = "";
 
-    item.cmts.forEach((cmt) => {
-        addCmtToCmtPanel(cmtPanel, cmt);
+    item.cmts.forEach((cmt, index) => {
+        addCmtToCmtPanel(cmtPanel, cmt, index);
     });
 }
 
@@ -865,10 +863,11 @@ function addMainItem(id, item) {
 
     const commentContent = document.createElement('div');
     commentContent.classList.add('main-item-comment-content');
+    commentContent.setAttribute('spid', id);
     comment.appendChild(commentContent);
 
-    item.cmts.forEach(cmt => {
-        addCmtToCmtPanel(commentContent, cmt);
+    item.cmts.forEach((cmt, index) => {
+        addCmtToCmtPanel(commentContent, cmt, index);
     })
 
     const repBar = document.createElement('div');
@@ -916,7 +915,7 @@ function addMainItem(id, item) {
             userID: logUserData.id
         }
 
-        addCmtToCmtPanel(commentContent, newCmt);
+        addCmtToCmtPanel(commentContent, newCmt, item.cmts.length);
 
         item.cmts.push(newCmt);
         sheetData.set(id, item);
@@ -971,7 +970,17 @@ function addMainItem(id, item) {
     firstBarClone.querySelector('.main-item-delete-btn').style.display = 'none';
 }
 
-function addCmtToCmtPanel(panel, cmt) {
+function openSetupCmtMenu(btn, call) {
+    const x = btn.getBoundingClientRect().left;
+    const y = btn.getBoundingClientRect().top + btn.getBoundingClientRect().height;
+    const menu = document.createElement('div');
+    menu.classList.add('active');
+    menu.style.right = `calc(100% - ${x}px)`;
+    menu.style.top = `${y}px`;
+    document.body.appendChild(menu);
+}
+
+function addCmtToCmtPanel(panel, cmt, index) {
     const user = userData.get(cmt.userID);
     const avt = user ? user.avt : 'icon/user.png';
     const name = user ? user.username : 'User';
@@ -1003,6 +1012,12 @@ function addCmtToCmtPanel(panel, cmt) {
     cmtTime.textContent = cmt.time;
     cmtNote.appendChild(cmtTime);
 
+    const setupCmt = document.createElement('div');
+    setupCmt.classList.add('main-item-cmt-setup');
+    setupCmt.textContent = '●●●';
+    setupCmt.onclick = () => openSetupCmtMenu(setupCmt, () => {});
+    cmtNote.appendChild(setupCmt);
+
     let cmtStr = '';
     let cmttext = cmt.comment || '';
     if (cmttext) {
@@ -1020,6 +1035,88 @@ function addCmtToCmtPanel(panel, cmt) {
     cmtComment.classList.add('main-item-cmt-comment');
     cmtComment.innerHTML = cmtStr;
     cmtContent.appendChild(cmtComment);
+
+    let likeUserList = [];
+    let disklikeUserList = [];
+    if (!cmt.feels) cmt.feels = {};
+    for (const [key, value] of Object.entries(cmt.feels)) { 
+        // Dùng value === true sẽ an toàn tuyệt đối hơn, đề phòng có giá trị rác lọt vào
+        if (value === true) { 
+            likeUserList.push(key);
+        } else if (value === false) { 
+            disklikeUserList.push(key);
+        }
+    }
+
+    const feelBar = document.createElement('div');
+    feelBar.classList.add('main-item-cmt-feel-bar');
+    cmtContent.appendChild(feelBar);
+
+    const cmtLike = document.createElement('div');
+    cmtLike.classList.add('main-item-cmt-like');
+    cmtLike.textContent = `${likeUserList.length}👍`;
+    feelBar.appendChild(cmtLike);
+
+    const cmtDisklike = document.createElement('div');
+    cmtDisklike.classList.add('main-item-cmt-disklike');
+    cmtDisklike.textContent = `${disklikeUserList.length}👎`;
+    feelBar.appendChild(cmtDisklike);
+
+    const userID = logUserData.id;
+    const spid = panel.getAttribute('spid');
+    const spData = sheetData.get(spid);
+
+    // SỰ KIỆN BẤM LIKE
+    cmtLike.addEventListener('click', () => {
+        if (cmt.feels[userID] === true) {
+            // TRƯỜNG HỢP 1: Đã Like rồi -> Bấm phát nữa là HỦY LIKE
+            delete cmt.feels[userID]; // Xóa user khỏi danh sách
+            likeUserList = likeUserList.filter(id => id !== userID);
+            cmtLike.textContent = `${likeUserList.length}👍`;
+        } else {
+            // TRƯỜNG HỢP 2: Chưa Like (hoặc đang Dislike) -> CHUYỂN THÀNH LIKE
+            if (cmt.feels[userID] === false) {
+                // Nếu trước đó đang Dislike thì phải trừ số đếm Dislike đi
+                disklikeUserList = disklikeUserList.filter(id => id !== userID);
+                cmtDisklike.textContent = `${disklikeUserList.length}👎`;
+            }
+            
+            cmt.feels[userID] = true;
+            likeUserList.push(userID);
+            cmtLike.textContent = `${likeUserList.length}👍`;
+        }
+
+        // Lưu dữ liệu
+        spData.cmts[index] = cmt; // Giả sử 'index' đã có ở scope bên ngoài
+        sheetData.set(spid, spData);
+        debouncedSaveSheet();
+    });
+
+    // SỰ KIỆN BẤM DISLIKE
+    cmtDisklike.addEventListener('click', () => {
+        if (cmt.feels[userID] === false) {
+            // TRƯỜNG HỢP 1: Đã Dislike rồi -> Bấm phát nữa là HỦY DISLIKE
+            delete cmt.feels[userID];
+            disklikeUserList = disklikeUserList.filter(id => id !== userID);
+            cmtDisklike.textContent = `${disklikeUserList.length}👎`;
+        } else {
+            // TRƯỜNG HỢP 2: Chưa Dislike (hoặc đang Like) -> CHUYỂN THÀNH DISLIKE
+            if (cmt.feels[userID] === true) {
+                // Nếu trước đó đang Like thì phải trừ số đếm Like đi
+                likeUserList = likeUserList.filter(id => id !== userID);
+                cmtLike.textContent = `${likeUserList.length}👍`;
+            }
+            
+            cmt.feels[userID] = false;
+            disklikeUserList.push(userID);
+            cmtDisklike.textContent = `${disklikeUserList.length}👎`;
+        }
+
+        // Lưu dữ liệu
+        spData.cmts[index] = cmt;
+        sheetData.set(spid, spData);
+        debouncedSaveSheet();
+    });
 }
 
 function OpenAddSpMenu(setup) {
@@ -1114,14 +1211,6 @@ function openPanelEvent() {
     } else {
         setupPanel.style.left = '-100%';
         setupBtnItem.style.backgroundColor = '#6bfff300';
-    }
-
-    if (openPanel === 'cmd') {
-        cmdPanel.style.left = 'calc(var(--panel-size) * 0.007)';
-        cmdBtnItem.style.backgroundColor = '#6bfff3';
-    } else {
-        cmdPanel.style.left = '-100%';
-        cmdBtnItem.style.backgroundColor = '#6bfff300';
     }
 }
 
@@ -1236,11 +1325,6 @@ addEditMenuBtn.addEventListener('click', () => {
 
 setupBtnItem.addEventListener('click', () => {
     if (openPanel !== 'setup') { openPanel = 'setup'; } else { openPanel = null; }
-    openPanelEvent()
-});
-
-cmdBtnItem.addEventListener('click', () => {
-    if (openPanel !== 'cmd') { openPanel = 'cmd'; } else { openPanel = null; }
     openPanelEvent()
 });
 
