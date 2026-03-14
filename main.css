@@ -1264,7 +1264,7 @@ select {
 }
 
 .main-item-cmt-comment {
-    font-weight: 100;
+    font-weight: 500;
     font-size: calc(var(--panel-size) * 0.05);
     margin-bottom: calc(var(--panel-size) * 0.005);
     text-align: left;
