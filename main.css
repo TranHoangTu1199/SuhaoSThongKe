@@ -1253,8 +1253,8 @@ select {
 
 .main-item-cmt-feel-bar {
     width: 96%;
-    height: calc(var(--panel-size) * 0.05);
-    font-size: calc(var(--panel-size) * 0.03);
+    height: calc(var(--panel-size) * 0.06);
+    font-size: calc(var(--panel-size) * 0.035);
     font-weight: normal;
     color: #6e6e6e;
     text-align: right;
@@ -1268,7 +1268,7 @@ select {
 }
 
 .main-item-cmt-setup {
-    font-size: calc(var(--panel-size) * 0.028);
+    font-size: calc(var(--panel-size) * 0.026);
     font-weight: normal;
     cursor: pointer;
     color: #242424;
@@ -1286,15 +1286,110 @@ select {
     box-shadow: #000000 0px 0px calc(var(--panel-size) * 0.3) 0px;
     position: absolute;
     z-index: 100;
-    width: calc(var(--panel-size) * 0.3);
-    height: calc(var(--panel-size) * 0.12);
     border-radius: var(--border-radius);
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     background-color: #ffffff;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     align-content: center;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+#setup-cmt-active > div {
+    font-weight: 300;
+    font-size: calc(var(--panel-size) * 0.04);
+    color: #000000;
+    cursor: pointer;
+    text-align: left;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    width: calc(var(--panel-size) * 0.3);
+    height: calc(var(--panel-size) * 0.06);
+    padding: calc(var(--panel-size) * 0.012);
+}
+
+#setup-cmt-active > div:hover {
+    background-color: #00000031;
+}
+
+#edit-cmt-active {
+    box-shadow: #000000 0px 0px calc(var(--panel-size) * 0.3) 0px;
+    position: absolute;
+    z-index: 100;
+    border-radius: var(--border-radius);
+    background-color: #ffffff;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    display: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#edit-cmt-active > img {
+    border-radius: var(--border-radius);
+    box-sizing: border-box;
+    margin: calc(var(--panel-size) * 0.01);
+    width: calc(var(--panel-size) * 0.8);
+}
+
+#edit-cmt-active > textarea {
+    height: calc(var(--panel-size) * 0.4);
+    padding: calc(var(--panel-size) * 0.01);
+    font-size: calc(var(--panel-size) * 0.04);
+    border-radius: var(--border-radius);
+    width: calc(var(--panel-size) * 0.8);
+    margin: calc(var(--panel-size) * 0.005);
+}
+#edit-cmt-active > textarea:focus {
+    outline: none;
+    border: #1768ff 1px solid;
+}
+
+#edit-cmt-active-btns {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    margin: calc(var(--panel-size) * 0.01);
+    width: 100%;
+    margin: 0;
+}
+
+#edit-cmt-active-btns > div {
+    font-weight: 300;
+    font-size: calc(var(--panel-size) * 0.04);
+    color: #000000;
+    cursor: pointer;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    width: 50%;
+    height: calc(var(--panel-size) * 0.072);
+    padding: calc(var(--panel-size) * 0.015);
+    margin: 0;
+}
+
+#edit-cmt-active-btns > :nth-child(1) {
+    border-right: #00000033 calc(var(--panel-size) * 0.003) solid;
+}
+
+#edit-cmt-active-btns > div:hover {
+    background-color: #00000031;
+}
+
+#delete-image-edit-cmt {
+    position: absolute;
+    top: 0;
+    right: 0;
+    cursor: pointer;
+    margin: calc(var(--panel-size) * 0.01);
 }

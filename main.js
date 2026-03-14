@@ -970,23 +970,79 @@ function addMainItem(id, item) {
     firstBarClone.querySelector('.main-item-delete-btn').style.display = 'none';
 }
 
+const activeSetupCmt = document.getElementById('setup-cmt-active');
+const editCmt = activeSetupCmt.querySelector('#edit-cmt');
+const deleteCmt = activeSetupCmt.querySelector('#delete-cmt');
+let openActiveSetupCmt = null;
 function openSetupCmtMenu(btn, call) {
     const x = btn.getBoundingClientRect().left;
     const y = btn.getBoundingClientRect().top + btn.getBoundingClientRect().height;
-    const menu = document.createElement('div');
-    menu.classList.add('active');
-    menu.style.right = `calc(100% - ${x}px)`;
-    menu.style.top = `${y}px`;
-    document.body.appendChild(menu);
+    activeSetupCmt.style.right = `calc(100vw - ${x}px - calc(var(--panel-size) * 0.07))`;
+    activeSetupCmt.style.top = `${y}px`;
+    activeSetupCmt.style.display = 'flex';
+    editCmt.onclick = () => call('edit');
+    deleteCmt.onclick = () => call('delete');
+}
+
+activeSetupCmt.addEventListener('mouseover', () => {
+    clearTimeout(openActiveSetupCmt);
+})
+
+activeSetupCmt.addEventListener('mouseout', () => {
+    openActiveSetupCmt = setTimeout(() => {
+        activeSetupCmt.style.display = 'none';
+    }, 100);
+})
+
+const editCmtActive = document.getElementById('edit-cmt-active');
+const applyEditCmt = editCmtActive.querySelector('.apply');
+const closeEditCmt = editCmtActive.querySelector('.close');
+const imgEditCmt = editCmtActive.querySelector('img');
+const textEditCmt = editCmtActive.querySelector('textarea');
+const deleteImgCmt = editCmtActive.querySelector('#delete-image-edit-cmt');
+closeEditCmt.addEventListener('click', () => {
+    editCmtActive.style.display = 'none';
+    document.getElementById('app').inert = false;
+})
+
+function openEditCmtMenu(cmt, call) {
+    editCmtActive.style.display = 'flex';
+    document.getElementById('app').inert = true;
+    textEditCmt.value = cmt.comment;
+
+    if (cmt.url.includes('=s400')) {
+        deleteImgCmt.style.display = 'flex';
+        imgEditCmt.src = cmt.url;
+    } else {
+        deleteImgCmt.style.display = 'none';
+        imgEditCmt.src = '';
+    }
+
+    applyEditCmt.addEventListener('click', () => {
+        call();
+        editCmtActive.style.display = 'none';
+        document.getElementById('app').inert = false;
+    })
 }
 
 function addCmtToCmtPanel(panel, cmt, index) {
     const user = userData.get(cmt.userID);
+    const userID = logUserData.id;
+    const spid = panel.getAttribute('spid');
+    const spData = sheetData.get(spid);
     const avt = user ? user.avt : 'icon/user.png';
     const name = user ? user.username : 'User';
+
+    if (!cmt.id) {
+        cmt.id = `cmt-${new Date().getTime()}-${Math.floor(Math.random() * 999)}`
+        spData.cmts[index] = cmt;
+        sheetData.set(spid, spData);
+        sheetData.save();
+    }
     
     const cmtDiv = document.createElement('div');
     cmtDiv.classList.add('main-item-cmt');
+    cmtDiv.setAttribute('data-id', cmt.id);
     panel.appendChild(cmtDiv);
 
     const cmtAvt = document.createElement('div');
@@ -1015,7 +1071,6 @@ function addCmtToCmtPanel(panel, cmt, index) {
     const setupCmt = document.createElement('div');
     setupCmt.classList.add('main-item-cmt-setup');
     setupCmt.textContent = '●●●';
-    setupCmt.onclick = () => openSetupCmtMenu(setupCmt, () => {});
     cmtNote.appendChild(setupCmt);
 
     let cmtStr = '';
@@ -1023,8 +1078,7 @@ function addCmtToCmtPanel(panel, cmt, index) {
     if (cmttext) {
         cmttext = cmttext.replace(/(?:\r\n|\r|\n)/g, '<br>');
     }
-    if (cmt.url) {
-        
+    if (cmt.url.includes('=s400')) {
         cmtStr = `<p>${cmttext}</p>
         <img src="${cmt.url}">`;
     } else {
@@ -1061,10 +1115,6 @@ function addCmtToCmtPanel(panel, cmt, index) {
     cmtDisklike.classList.add('main-item-cmt-disklike');
     cmtDisklike.textContent = `${disklikeUserList.length}👎`;
     feelBar.appendChild(cmtDisklike);
-
-    const userID = logUserData.id;
-    const spid = panel.getAttribute('spid');
-    const spData = sheetData.get(spid);
 
     // SỰ KIỆN BẤM LIKE
     cmtLike.addEventListener('click', () => {
@@ -1116,6 +1166,51 @@ function addCmtToCmtPanel(panel, cmt, index) {
         spData.cmts[index] = cmt;
         sheetData.set(spid, spData);
         debouncedSaveSheet();
+    });
+
+    const setupCmtevent = () => openSetupCmtMenu(setupCmt, (st) => {
+        if (st === 'edit') {
+            activeSetupCmt.style.display = 'none';
+            openEditCmtMenu(cmt, () => {
+                let newContent = '';
+                let cmttext = textEditCmt.value || '';
+
+                if (cmttext) {
+                    cmttext = cmttext.replace(/(?:\r\n|\r|\n)/g, '<br>');
+                }
+
+                if (imgEditCmt.src.includes('=s400')) {
+                    newContent = `<p>${cmttext}</p>
+                    <img src="${imgEditCmt.src}">`;
+                    cmt.url = imgEditCmt.src;
+                    cmt.comment = cmttext;
+                } else {
+                    newContent = `<p>${cmttext}</p>`;
+                    cmt.comment = cmttext;
+                }
+                cmtComment.innerHTML = newContent;
+                spData.cmts[index] = cmt;
+                sheetData.set(spid, spData);
+                debouncedSaveSheet();
+            })
+        } else if (st === 'delete') {
+            activeSetupCmt.style.display = 'none';
+            cmtDiv.remove();
+            spData.cmts.splice(index, 1);
+            sheetData.set(spid, spData);
+            debouncedSaveSheet();
+        }
+    });
+
+    setupCmt.addEventListener('mouseover', () => {
+        setupCmtevent();
+        clearTimeout(openActiveSetupCmt);
+    });
+
+    setupCmt.addEventListener('mouseout', () => {
+        openActiveSetupCmt = setTimeout(() => {
+            activeSetupCmt.style.display = 'none';
+        }, 300);
     });
 }
 
