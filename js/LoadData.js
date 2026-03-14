@@ -200,12 +200,13 @@ export class LoadDataForDict {
                     } 
                     // Xử lý khi có thay đổi thực sự
                     else if (newDataString !== this.oldData) {
+                        const oldDataObject = JSON.parse(this.oldData);
                         this.oldData = newDataString;
-                        this.data = newData; 
-                        callback(this.data);
+                        this.data = newData;
+                        callback(this.data, oldDataObject);
                     }
                 } catch (error) {
-                    // Xuất lý lần gọi đầu tiên
+                    console.error(error);
                 }
             }
 

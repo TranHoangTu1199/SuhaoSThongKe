@@ -364,7 +364,7 @@ setupData.addChangeSheetCallback('Setup', updateSetupData);
 const sheetData = new LoadDataForDict(scriptURL, "Sheet1");
 const debouncedSaveSheet = debounce(() => sheetData.save(), 500);
 
-function updateSheetData() {
+function upSheetData() {
     // 1. Tạo một mảng tạm để chứa dữ liệu
     let tempItems = [];
     mainPanel.innerHTML = '';
@@ -385,7 +385,7 @@ function updateSheetData() {
     });
 
     // 4. Lặp qua mảng đã sắp xếp để in ra màn hình
-    tempItems.forEach((obj, index) => {
+    tempItems.forEach((obj) => {
         addMainItem(obj.id, obj.itemData);
     });
 
@@ -394,7 +394,89 @@ function updateSheetData() {
     resizeEvent();
 }
 
-sheetData.init().then(updateSheetData);
+function updateSheetData(newData, oldData) {
+    const newKeys = Object.keys(newData);
+    const oldKeys = Object.keys(oldData);
+
+    newKeys.sort((a, b) => {
+        const dateA = new Date(newData[a].date);
+        const dateB = new Date(newData[b].date);
+        return dateA - dateB;
+    });
+
+    mainPanel.querySelectorAll('main-item').forEach((item) => {
+        const id = item.getAttribute('spid');
+        if (!newKeys.includes(id)) {
+            item.remove();
+        }
+    });
+
+    document.body.querySelectorAll('main-item-lastbar').forEach((item) => {
+        const id = item.getAttribute('spid');
+        if (!newKeys.includes(id)) {
+            item.remove();
+        }
+    });
+
+    newKeys.forEach((id) => {
+        if (!oldKeys.includes(id)) {
+            addMainItem(id, JSON.parse(newData[id]));
+        } else {
+            const oldDataStr = oldData[id];
+            const newDataStr = newData[id];
+            const newDataObj = JSON.parse(newDataStr);
+            if (oldDataStr !== newDataStr) {
+                updateMainItem(id, newDataObj);
+            }
+        }
+    });
+}
+
+function updateMainItem(id, item) {
+    const mainItem = mainPanel.querySelector(`.main-item[spid="${id}"]`); 
+    const lastBar = document.querySelector(`.main-item-lastbar[spid="${id}"]`);
+
+    const mainImg = mainItem.querySelector('.main-item-img');
+    const lastBarImg = lastBar.querySelector('.main-item-img');
+    mainImg.src = item.img;
+    lastBarImg.src = item.img;
+
+    const mainName = mainItem.querySelector('.main-item-name');
+    const lastBarName = lastBar.querySelector('.main-item-name');
+    mainName.textContent = item.name;
+    lastBarName.textContent = item.name;
+
+    const sizeloop = item.size.split(/\s*,\s*/).length;
+    let loadSL = "";
+    let tong = 0;
+    for (const [key, value] of Object.entries(item.sl)) {
+        loadSL += `- ${key}: ${value} / ${sizeloop * value}<br>`;
+        tong += parseInt(value);
+    }
+    loadSL += `Tổng: ${tong} / ${sizeloop * tong}<br>`;
+
+    const thongtin = `
+    Ngày: ${item.date}<br>
+    Size: ${item.size}<br><br>
+    ${loadSL}<br>
+    <span style="font-weight: bold;" class="main-item-code">#${item.code}<br></span>
+    <span style="color: red;">- ${item.actor}<br>
+    - ${item.group}</span>`;
+
+    const mainThongtin = mainItem.querySelector('.main-item-thongtin');
+    const lastBarThongtin = lastBar.querySelector('.main-item-thongtin');
+    mainThongtin.innerHTML = thongtin;
+    lastBarThongtin.innerHTML = thongtin;
+
+    const cmtPanel = lastBar.querySelector('.main-item-comment-content');
+    cmtPanel.innerHTML = "";
+
+    item.cmts.forEach((cmt) => {
+        addCmtToCmtPanel(cmtPanel, cmt);
+    });
+}
+
+sheetData.init().then(upSheetData);
 sheetData.addChangeSheetCallback('SheetData', updateSheetData);
 
 const imageDict = new LoadDataForDict(scriptURL, "Image");
@@ -536,7 +618,23 @@ applyImageBtn.addEventListener('click', () => {
     const selected = document.querySelector('.image-item-bar.selected');
     if (selected) {
         if (addImgStyle === 'cmt') {
-            // Thêm cơ bản
+            const ldiv = document.body.querySelector('.main-item-lastbar[style="display: flex;"]');
+            const repBar = ldiv.querySelector('.main-item-rep-bar');
+            const limgbar = document.createElement('div');
+            repBar.querySelector('.limgbar')?.remove();
+            limgbar.classList.add('limgbar');
+            repBar.appendChild(limgbar);
+            const limg = document.createElement('div');
+            limg.classList.add('add-img-to-cmt');
+            limg.style.backgroundImage = `url("${selected.querySelector('img').src}")`;
+            limgbar.appendChild(limg);
+            const removeBtn = document.createElement('div');
+            removeBtn.classList.add('remove-img-to-cmt');
+            removeBtn.textContent = '✕';
+            limg.appendChild(removeBtn);
+            removeBtn.addEventListener('click', () => {
+                limgbar.remove();
+            })
         } else if (addImgStyle === 'default') {
             const img = selected.querySelector('img').src;
             addSpImageBox.src = img;
@@ -695,28 +793,16 @@ function resetCmtPanelViewIsOpen() {
     }
 }
 
-function addMainItem(id, item, isEdit = false) {
-    let div, lastBar;
+function addMainItem(id, item) {
+    const div = document.createElement('div');
+    div.classList.add('main-item');
+    div.setAttribute('spid', id);
+    mainPanel.appendChild(div);
 
-    if (!isEdit) {
-        div = document.createElement('div');
-        div.classList.add('main-item');
-        div.setAttribute('spid', id);
-        mainPanel.prepend(div);
-
-        lastBar = document.createElement('div');
-        lastBar.classList.add('main-item-lastbar');
-        lastBar.setAttribute('spid', id);
-        document.body.appendChild(lastBar);
-    } else {
-        div = mainPanel.querySelector(`[spid="${openSpMenuStyle}"]`);
-        div.setAttribute('spid', id);
-        div.innerHTML = '';
-
-        lastBar = document.querySelector(`.main-item-lastbar[spid="${openSpMenuStyle}"]`);
-        lastBar.setAttribute('spid', id);
-        lastBar.innerHTML = '';
-    }
+    const lastBar = document.createElement('div');
+    lastBar.classList.add('main-item-lastbar');
+    lastBar.setAttribute('spid', id);
+    document.body.appendChild(lastBar);
 
     const firstBar = document.createElement('div');
     firstBar.classList.add('main-item-firstbar');
@@ -781,6 +867,10 @@ function addMainItem(id, item, isEdit = false) {
     commentContent.classList.add('main-item-comment-content');
     comment.appendChild(commentContent);
 
+    item.cmts.forEach(cmt => {
+        addCmtToCmtPanel(commentContent, cmt);
+    })
+
     const repBar = document.createElement('div');
     repBar.classList.add('main-item-rep-bar');
     comment.appendChild(repBar);
@@ -815,7 +905,25 @@ function addMainItem(id, item, isEdit = false) {
     });
 
     repBtn.addEventListener('click', () => {
+        const limgbar = document.querySelector('.limgbar');
+        const imgForCmt = limgbar?.querySelector('.add-img-to-cmt')?.style?.backgroundImage;
+        const imgForCmtUrl = imgForCmt?.match(/url\("(.*)"\)/)[1];
+        
+        const newCmt = {
+            url: imgForCmtUrl,
+            comment: repInput.value,
+            time: new Date().toLocaleString(),
+            userID: logUserData.id
+        }
+
+        addCmtToCmtPanel(commentContent, newCmt);
+
+        item.cmts.push(newCmt);
+        sheetData.set(id, item);
+        sheetData.save();
+
         repInput.value = '';
+        limgbar?.remove();
     })
 
     let isCmtOpen = false;
@@ -861,6 +969,57 @@ function addMainItem(id, item, isEdit = false) {
     firstBarClone.querySelector('.main-item-cmt-btn').addEventListener('click', mainItemCmtEvent);
     firstBarClone.querySelector('.main-item-edit-btn').addEventListener('click', mainItemEditEvent);
     firstBarClone.querySelector('.main-item-delete-btn').style.display = 'none';
+}
+
+function addCmtToCmtPanel(panel, cmt) {
+    const user = userData.get(cmt.userID);
+    const avt = user ? user.avt : 'icon/user.png';
+    const name = user ? user.username : 'User';
+    
+    const cmtDiv = document.createElement('div');
+    cmtDiv.classList.add('main-item-cmt');
+    panel.appendChild(cmtDiv);
+
+    const cmtAvt = document.createElement('div');
+    cmtAvt.classList.add('main-item-cmt-avt');
+    cmtAvt.style.backgroundImage = `url("${avt}")`;
+    cmtDiv.appendChild(cmtAvt);
+
+    const cmtContent = document.createElement('div');
+    cmtContent.classList.add('main-item-cmt-content');
+    cmtDiv.appendChild(cmtContent);
+
+    const cmtNote = document.createElement('div');
+    cmtNote.classList.add('main-item-cmt-note');
+    cmtContent.appendChild(cmtNote);
+
+    const cmtUser = document.createElement('div');
+    cmtUser.classList.add('main-item-cmt-user');
+    cmtUser.textContent = name;
+    cmtNote.appendChild(cmtUser);
+
+    const cmtTime = document.createElement('div');
+    cmtTime.classList.add('main-item-cmt-time');
+    cmtTime.textContent = cmt.time;
+    cmtNote.appendChild(cmtTime);
+
+    let cmtStr = '';
+    let cmttext = cmt.comment || '';
+    if (cmttext) {
+        cmttext = cmttext.replace(/(?:\r\n|\r|\n)/g, '<br>');
+    }
+    if (cmt.url) {
+        
+        cmtStr = `<p>${cmttext}</p>
+        <img src="${cmt.url}">`;
+    } else {
+        cmtStr = `<p>${cmttext}</p>`;
+    }
+
+    const cmtComment = document.createElement('div');
+    cmtComment.classList.add('main-item-cmt-comment');
+    cmtComment.innerHTML = cmtStr;
+    cmtContent.appendChild(cmtComment);
 }
 
 function OpenAddSpMenu(setup) {
@@ -1167,7 +1326,7 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
         const size = addSpSizeInput.value;
         const code = addSpCodeInput.value;
         const img = addSpImageBox.src;
-        const id = `${name} - ${new Date().getTime()}`;
+        const id = openSpMenuStyle;
 
         let sl = {};
         addSpMenu.querySelectorAll('.add-sp-item').forEach(item => {
@@ -1191,7 +1350,7 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
 
         addSpMenu.style.display = 'none';
         document.getElementById('app').inert = false;
-        addMainItem(id, newItems, true);
+        updateMainItem(id, newItems)
         sheetData.remove(openSpMenuStyle);
         sheetData.set(id, newItems);
         debouncedSaveSheet();
