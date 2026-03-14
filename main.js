@@ -53,7 +53,6 @@ const setUserImg = document.getElementById('edit-user-menu-contents').querySelec
 
 let openPanel = null;
 let isVertical = true;
-let isCmtOpen = false;
 let openSpMenuStyle = "add new";
 let loadSetup = false;
 let loadSheet = false;
@@ -207,11 +206,11 @@ function loadFilterAndSearch() {
     let activeFashions = [];
 
     if (isFilterActive) {
-        setupData.get('stylesSetup')?.forEach(item => {
+        stylesSetupContent.querySelectorAll('input').forEach(item => {
             if (item.checked) activeStyles.push(item.value);
         });
         
-        setupData.get('fashionsSetup')?.forEach(item => {
+        fashionsSetupContent.querySelectorAll('input').forEach(item => {
             if (item.checked) activeFashions.push(item.value);
         });
     }
@@ -236,61 +235,59 @@ function loadFilterAndSearch() {
 searchInput.addEventListener('input', loadFilterAndSearch);
 
 const setupData = new LoadDataForDict(scriptURL, "Setup");
-const debouncedSave = debounce(() => setupData.save(), 1000);
+const debouncedSave = debounce(() => setupData.save(), 500);
 
 function updateSetupData() {
-    if (!setupData.check('dateSetup')) {
-        setupData.set('dateSetup', { month: 1, year: 2024, years: [2024, 2025, 2026] });
+    if (!setupData.check('years')) {
+        setupData.set('years', ["2024", "2025", "2026"]);
     }
 
-    const dateSetup = setupData.get('dateSetup');
+    let years = setupData.get('years');
+    const newdate = new Date();
+    const month = newdate.getMonth() + 1;
+    const year = newdate.getFullYear().toString();
+    if (!years.includes(year)) {
+        years.push(year);
+        setupData.set('years', years);
+        debouncedSave();
+    }
+
     yearSelect.innerHTML = '';
-    dateSetup.years.forEach(year => {
+    years.forEach(year => {
         const option = document.createElement('option');
         option.value = year;
         option.textContent = year;
         yearSelect.appendChild(option);
     });
 
-    monthSelect.value = dateSetup.month;
-    yearSelect.value = dateSetup.year;
+    monthSelect.value = month;
+    yearSelect.value = year;
 
-    monthSelect.addEventListener('change', () => {
-        dateSetup.month = parseInt(monthSelect.value);
-        setupData.set('dateSetup', dateSetup);
-        loadFilterAndSearch();
-        debouncedSave();
-    });
-
-    yearSelect.addEventListener('change', () => {
-        dateSetup.year = parseInt(yearSelect.value);
-        setupData.set('dateSetup', dateSetup);
-        loadFilterAndSearch();
-        debouncedSave();
-    });
+    monthSelect.addEventListener('change', loadFilterAndSearch);
+    yearSelect.addEventListener('change', loadFilterAndSearch);
 
     const editDateSetup = dateSetupPanel.querySelector('.editBtn');
     editDateSetup.addEventListener('click', () => {
-        openEditMenu(dateSetup.years, (newList) => {
-            dateSetup.years = newList;
-            setupData.set('dateSetup', dateSetup);
+        openEditMenu(years, (newList) => {
+            newList.sort();
+            years = newList;
+            setupData.set('years', newList);
             debouncedSave();
 
             // Cập nhật lại yearSelect
             yearSelect.innerHTML = '';
-            dateSetup.years.forEach(year => {
+            newList.forEach(year => {
                 const option = document.createElement('option');
                 option.value = year;
                 option.textContent = year;
                 yearSelect.appendChild(option);
             });
 
-            yearSelect.value = dateSetup.year;
+            yearSelect.value = year;
         });
     });
 
-    checkedSetup.checked = setupData.get('filterChecked');
-    let isChecked = checkedSetup.checked;
+    let isChecked = false;
     checkedSetup.addEventListener('change', () => {
         if (checkedSetup.checked !== isChecked) {
             isChecked = checkedSetup.checked;
@@ -298,93 +295,74 @@ function updateSetupData() {
         loadFilterAndSearch();
     });
 
-    if (!setupData.check('stylesSetup')) { setupData.set('stylesSetup', []); }
-    let stylesSetupData = setupData.get('stylesSetup');
+    if (!setupData.check('styles')) { setupData.set('styles', []); }
+    let stylesData = setupData.get('styles');
     let index = 0;
     stylesSetupContent.innerHTML = '';
-    stylesSetupData.forEach(style => { addSetupItem(stylesSetupContent, style, 'style', (checkbox) => {
-        style.checked = checkbox.checked;
-        setupData.set('stylesSetup', stylesSetupData);
-        debouncedSave();
-    }, index++) });
+    stylesData.forEach(style => {
+        addSetupItem(stylesSetupContent, style, 'style', null, index++)
+    });
 
     const editStylesSetup = stylesSetup.querySelector('.editBtn');
     editStylesSetup.addEventListener('click', () => {
-        const stylesSetupDataList = stylesSetupData.map(item => item.value);
-        openEditMenu(stylesSetupDataList, (newList) => {
-            stylesSetupData = newList.map(item => { 
-                return { value: item, checked: false };
-            });
-            setupData.set('stylesSetup', stylesSetupData);
+        openEditMenu(stylesData, (newList) => {
+            stylesData = newList;
+            stylesData.sort();
+            setupData.set('styles', stylesData);
             debouncedSave();
             stylesSetupContent.innerHTML = '';
             let index = 0;
-            stylesSetupData.forEach(style => { addSetupItem(stylesSetupContent, style, 'style', (checkbox) => {
-                style.checked = checkbox.checked;
-                setupData.set('stylesSetup', stylesSetupData);
-                debouncedSave();
-            }, index++)});
+            stylesData.forEach(style => { 
+                addSetupItem(stylesSetupContent, style, 'style', null, index++)
+            });
         });
     });
 
     stylesSetupAll.addEventListener('change', () => {
-        stylesSetupData.forEach(style => {
-            style.checked = stylesSetupAll.checked;
-            const checkbox = stylesSetupContent.querySelector(`input[value="${style.value}"]`);
-            if (checkbox) checkbox.checked = stylesSetupAll.checked;
+        stylesSetupContent.querySelectorAll('input').forEach(item => {
+            item.checked = stylesSetupAll.checked;
         });
-        setupData.set('stylesSetup', stylesSetupData);
         loadFilterAndSearch();
-        debouncedSave();
     });
 
-    if (!setupData.check('fashionsSetup')) { setupData.set('fashionsSetup', []); }
-    let fashionsSetupData = setupData.get('fashionsSetup');
+    if (!setupData.check('fashions')) { setupData.set('fashions', []); }
+    let fashionsData = setupData.get('fashions');
     index = 0;
     fashionsSetupContent.innerHTML = '';
-    fashionsSetupData.forEach(fashion => { addSetupItem(fashionsSetupContent, fashion, 'fashion', (checkbox) => {
-        fashion.checked = checkbox.checked;
-        setupData.set('fashionsSetup', fashionsSetupData);
-        debouncedSave();
-    }, index++) });
+    fashionsData.forEach(fashion => { 
+        addSetupItem(fashionsSetupContent, fashion, 'fashion', null, index++)
+    });
 
     const editFashionsSetup = fashionsSetup.querySelector('.editBtn');
     editFashionsSetup.addEventListener('click', () => {
-        const fashionsSetupDataList = fashionsSetupData.map(item => item.value);
-        openEditMenu(fashionsSetupDataList, (newList) => {
-            fashionsSetupData = newList.map(item => { 
-                return { value: item, checked: false };
-            });
-            setupData.set('fashionsSetup', fashionsSetupData);
+        openEditMenu(fashionsData, (newList) => {
+            fashionsData = newList
+            fashionsData.sort();
+            setupData.set('fashions', fashionsData);
             debouncedSave();
             fashionsSetupContent.innerHTML = '';
             let index = 0;
-            fashionsSetupData.forEach(fashion => { addSetupItem(fashionsSetupContent, fashion, 'fashion', (checkbox) => {
-                fashion.checked = checkbox.checked;
-                setupData.set('fashionsSetup', fashionsSetupData);
-                debouncedSave();
-            }, index++)});
+            fashionsData.forEach(fashion => { 
+                addSetupItem(fashionsSetupContent, fashion, null, index++)
+            });
         });
     });
 
     fashionsSetupAll.addEventListener('change', () => {
-        fashionsSetupData.forEach(fashion => {
-            fashion.checked = fashionsSetupAll.checked;
-            const checkbox = fashionsSetupContent.querySelector(`input[value="${fashion.value}"]`);
-            if (checkbox) checkbox.checked = fashionsSetupAll.checked;
-        });
-        setupData.set('fashionsSetup', fashionsSetupData);
+        fashionsSetupContent.querySelectorAll('input').forEach(item => {
+            item.checked = fashionsSetupAll.checked;
+        })
         loadFilterAndSearch();
-        debouncedSave();
     });
+
     loadSetup = true;
 }
 
 setupData.init().then(updateSetupData);
-// setupData.addChangeSheetCallback('Setup', updateSetupData);
+setupData.addChangeSheetCallback('Setup', updateSetupData);
 
 const sheetData = new LoadDataForDict(scriptURL, "Sheet1");
-const debouncedSaveSheet = debounce(() => sheetData.save(), 1000);
+const debouncedSaveSheet = debounce(() => sheetData.save(), 500);
 
 function updateSheetData() {
     // 1. Tạo một mảng tạm để chứa dữ liệu
@@ -413,6 +391,7 @@ function updateSheetData() {
 
     closeLoadingBar();
     loadSheet = true;
+    resizeEvent();
 }
 
 sheetData.init().then(updateSheetData);
@@ -702,51 +681,56 @@ loadImageInput.addEventListener('change', async () => {
     loadImageInput.value = ''; 
 });
 
-function resetCmtPanelViewIsOpen(comment, content, img, cmtbtn, later) {
+function resetCmtPanelViewIsOpen() {
     if (isVertical) {
-        if (isCmtOpen) {
-            comment.style.display = 'flex';
-            content.style.display = 'none';
-            img.style.maxWidth = '50%';
-        } else {
-            comment.style.display = 'none';
-            content.style.display = 'flex';
-            img.style.maxWidth = '50%';
-        }
-        cmtbtn.style.display = 'flex';
-        later.style.display = 'flex';
+        mainPanel.querySelectorAll('.main-item').forEach(item => {
+            item.classList.remove('main-item-row');
+            item.classList.add('main-item-col');
+        })
     } else {
-        comment.style.display = 'flex';
-        content.style.display = 'flex';
-        img.style.maxWidth = '30%';
-        cmtbtn.style.display = 'none';
-        later.style.display = 'none';
+        mainPanel.querySelectorAll('.main-item').forEach(item => {
+            item.classList.remove('main-item-col');
+            item.classList.add('main-item-row');
+        })
     }
 }
 
 function addMainItem(id, item, isEdit = false) {
-    let div
+    let div, lastBar;
 
     if (!isEdit) {
         div = document.createElement('div');
         div.classList.add('main-item');
         div.setAttribute('spid', id);
         mainPanel.prepend(div);
+
+        lastBar = document.createElement('div');
+        lastBar.classList.add('main-item-lastbar');
+        lastBar.setAttribute('spid', id);
+        document.body.appendChild(lastBar);
     } else {
         div = mainPanel.querySelector(`[spid="${openSpMenuStyle}"]`);
         div.setAttribute('spid', id);
         div.innerHTML = '';
+
+        lastBar = document.querySelector(`.main-item-lastbar[spid="${openSpMenuStyle}"]`);
+        lastBar.setAttribute('spid', id);
+        lastBar.innerHTML = '';
     }
+
+    const firstBar = document.createElement('div');
+    firstBar.classList.add('main-item-firstbar');
+    div.appendChild(firstBar);
 
     const img = document.createElement('img');
     img.src = item.img;
     img.loading = "lazy"; 
     img.classList.add('main-item-img');
-    div.appendChild(img);
+    firstBar.appendChild(img);
 
     const content = document.createElement('div');
     content.classList.add('main-item-content');
-    div.appendChild(content);
+    firstBar.appendChild(content);
 
     const name = document.createElement('div');
     name.classList.add('main-item-name');
@@ -791,12 +775,11 @@ function addMainItem(id, item, isEdit = false) {
 
     const comment = document.createElement('div');
     comment.classList.add('main-item-comment');
-    div.appendChild(comment);
+    lastBar.appendChild(comment);
 
-    const later = document.createElement('div');
-    later.classList.add('main-item-later');
-    later.textContent = "›";
-    comment.appendChild(later);
+    const commentContent = document.createElement('div');
+    commentContent.classList.add('main-item-comment-content');
+    comment.appendChild(commentContent);
 
     const repBar = document.createElement('div');
     repBar.classList.add('main-item-rep-bar');
@@ -835,18 +818,27 @@ function addMainItem(id, item, isEdit = false) {
         repInput.value = '';
     })
 
-    later.addEventListener('click', () => {
+    let isCmtOpen = false;
+    const mainItemCmtEvent = () => {
         isCmtOpen = !isCmtOpen;
-        resetCmtPanelViewIsOpen(comment, content, img, cmtBtn, later);
-    })
+        if (!isCmtOpen) {
+            lastBar.style.display = 'none';
+            mainPanel.style.overflowY = 'auto';
+        } else {
+            lastBar.style.display = 'flex';
+            mainPanel.style.overflowY = 'hidden';
+        }
+        resetCmtPanelViewIsOpen();
+    }
 
-    cmtBtn.addEventListener('click', () => {
-        isCmtOpen = !isCmtOpen;
-        resetCmtPanelViewIsOpen(comment, content, img, cmtBtn, later);
-    });
+    const mainItemEditEvent = () => {
+        openSpMenuStyle = id;
+        OpenAddSpMenu(item);
+    }
 
-    deleteBtn.addEventListener('click', async () => {
-        mainPanel.removeChild(div);
+    const mainItemDeleteEvent = async () => {
+        div.remove();
+        lastBar.remove();
         sheetData.remove(id);
         sheetData.save();
         if (img.src && img.src !== 'icon/image.png') {
@@ -857,35 +849,39 @@ function addMainItem(id, item, isEdit = false) {
                 await deleteImageFromDrive(oldFileIdMatch[0]);
             }
         }
-    });
+    }
 
-    editBtn.addEventListener('click', () => {
-        openSpMenuStyle = id;
-        OpenAddSpMenu(setupData, item);
-    });
+    cmtBtn.addEventListener('click', mainItemCmtEvent);
+    deleteBtn.addEventListener('click', mainItemDeleteEvent);
+    editBtn.addEventListener('click', mainItemEditEvent);
 
-    resetCmtPanelViewIsOpen(comment, content, img, cmtBtn, later);
+    const firstBarClone = firstBar.cloneNode(true);
+    lastBar.prepend(firstBarClone);
+
+    firstBarClone.querySelector('.main-item-cmt-btn').addEventListener('click', mainItemCmtEvent);
+    firstBarClone.querySelector('.main-item-edit-btn').addEventListener('click', mainItemEditEvent);
+    firstBarClone.querySelector('.main-item-delete-btn').style.display = 'none';
 }
 
-function OpenAddSpMenu(setupData, setup) {
+function OpenAddSpMenu(setup) {
     addSpMenu.style.display = 'flex';
     document.getElementById('app').inert = true;
-    const stylesSetup = setupData.get('stylesSetup');
-    const fashionsSetup = setupData.get('fashionsSetup');
+    const stylesSetup = setupData.get('styles');
+    const fashionsSetup = setupData.get('fashions');
     addSpActorInput.innerHTML = '';
     addSpGroupInput.innerHTML = '';
 
     stylesSetup.forEach(item => {
         const option = document.createElement('option');
-        option.value = item.value;
-        option.textContent = item.value;
+        option.value = item;
+        option.textContent = item;
         addSpGroupInput.appendChild(option);
     });
 
     fashionsSetup.forEach(item => {
         const option = document.createElement('option');
-        option.value = item.value;
-        option.textContent = item.value;
+        option.value = item;
+        option.textContent = item;
         addSpActorInput.appendChild(option);
     });
 
@@ -932,8 +928,8 @@ function OpenAddSpMenu(setupData, setup) {
         addSpSizeInput.value = '';
         addSpCodeInput.value = '0';
         addSpDateInput.value = new Date().toISOString().split('T')[0];
-        addSpActorInput.value = fashionsSetup[0].value;
-        addSpGroupInput.value = stylesSetup[0].value;
+        addSpActorInput.value = fashionsSetup[0];
+        addSpGroupInput.value = stylesSetup[0];
         addSpImageBox.src = 'icon/image.png';
         addSpItems.innerHTML = '';
 
@@ -977,23 +973,22 @@ function resizeEvent() {
         const panelSize = window.innerWidth;
         document.documentElement.style.setProperty('--panel-size', `${panelSize}px`);
         document.documentElement.style.setProperty('--sp-menu-size', '100%');
+        document.querySelectorAll('.main-item-lastbar').forEach(item => {
+            item.classList.add('vertical');
+        })
     } else {
         const panelSize = window.innerWidth * 0.35;
         document.documentElement.style.setProperty('--panel-size', `${panelSize}px`);
         document.documentElement.style.setProperty('--sp-menu-size', 'calc(var(--panel-size) * 1.2)');
+        document.querySelectorAll('.main-item-lastbar').forEach(item => {
+            item.classList.remove('vertical');
+        })
     }
 
-    mainPanel.querySelectorAll('.main-item').forEach(item => {
-        const comment = item.querySelector('.main-item-comment');
-        const content = item.querySelector('.main-item-content');
-        const img = item.querySelector('.main-item-img');
-        const cmtbtn = item.querySelector('.main-item-cmt-btn');
-        const later = item.querySelector('.main-item-later');
-        resetCmtPanelViewIsOpen(comment, content, img, cmtbtn, later);
-    });
+    resetCmtPanelViewIsOpen();
 }
 
-function addSetupItem(EL, dict, key, func, index) {
+function addSetupItem(EL, value, key, func, index) {
     const div = document.createElement('div');
     div.classList.add(`checked-${key}s-setup`);
     EL.appendChild(div);
@@ -1002,18 +997,18 @@ function addSetupItem(EL, dict, key, func, index) {
     
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.value = dict.value;
+    checkbox.value = value;
     checkbox.id = newID;
-    checkbox.checked = dict.checked;
+    checkbox.checked = false;
     div.appendChild(checkbox);
 
     const label = document.createElement('label');
-    label.textContent = dict.value;
+    label.textContent = value;
     label.setAttribute('for', newID);
     div.appendChild(label);
 
     checkbox.addEventListener('change', () => { 
-        func(checkbox);
+        if (func) func(checkbox);
         loadFilterAndSearch();
     });
 }
@@ -1092,7 +1087,7 @@ cmdBtnItem.addEventListener('click', () => {
 
 addBtnItem.addEventListener('click', () => {
     openSpMenuStyle = "add new";
-    OpenAddSpMenu(setupData);
+    OpenAddSpMenu();
 });
 
 addSpMenuCloseBtn.addEventListener('click', async () => {
@@ -1201,6 +1196,7 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
         sheetData.set(id, newItems);
         debouncedSaveSheet();
     }
+    resizeEvent();
 })
 
 document.addEventListener('DOMContentLoaded', () => {

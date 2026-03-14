@@ -177,7 +177,7 @@ export class LoadDataForDict {
         }
     }
 
-    addChangeSheetCallback(key, callback, timeout = 500) {
+    addChangeSheetCallback(key, callback, timeout = 700) {
         if (this.activeTimers[key]) return; 
         
         this.activeTimers[key] = true;
