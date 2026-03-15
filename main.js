@@ -476,8 +476,15 @@ function updateMainItem(id, item) {
     });
 }
 
-sheetData.init().then(upSheetData);
-sheetData.addChangeSheetCallback('SheetData', updateSheetData);
+// sheetData.init().then(upSheetData);
+// sheetData.addChangeSheetCallback('SheetData', updateSheetData);
+playRunForTime(() => {
+    if (loadUser) {
+        sheetData.init().then(upSheetData);
+        sheetData.addChangeSheetCallback('SheetData', updateSheetData);
+        stopRunForTime('loadsheet');
+    }
+}, 500, 'loadsheet');
 
 const imageDict = new LoadDataForDict(scriptURL, "Image");
 
