@@ -906,15 +906,17 @@ function addMainItem(id, item) {
     });
 
     repBtn.addEventListener('click', () => {
+        if (!logUserData.loging) return;
         const limgbar = document.querySelector('.limgbar');
         const imgForCmt = limgbar?.querySelector('.add-img-to-cmt')?.style?.backgroundImage;
         const imgForCmtUrl = imgForCmt?.match(/url\("(.*)"\)/)[1];
         
         const newCmt = {
-            url: imgForCmtUrl,
+            url: imgForCmtUrl || '',
             comment: repInput.value,
             time: new Date().toLocaleString(),
-            userID: logUserData.id
+            userID: logUserData.id,
+            feels: {}
         }
 
         addCmtToCmtPanel(commentContent, newCmt, item.cmts.length);
