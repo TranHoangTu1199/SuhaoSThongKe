@@ -381,7 +381,7 @@ function upSheetData() {
     tempItems.sort((a, b) => {
         const dateA = new Date(a.itemData.date);
         const dateB = new Date(b.itemData.date);
-        return dateA - dateB; 
+        return dateA - dateB;
     });
 
     // 4. Lặp qua mảng đã sắp xếp để in ra màn hình
@@ -396,16 +396,17 @@ function upSheetData() {
 
 function updateSheetData(newData, oldData) {
     const newKeys = Object.keys(newData);
-    const oldKeys = Object.keys(oldData);
 
     newKeys.sort((a, b) => {
         const dateA = new Date(newData[a].date);
         const dateB = new Date(newData[b].date);
-        return dateA - dateB;
+        return dateB - dateA;
     });
 
-    mainPanel.querySelectorAll('main-item').forEach((item) => {
+    const oldIds = [];
+    [...mainPanel.children].forEach((item) => {
         const id = item.getAttribute('spid');
+        oldIds.push(id);
         if (!newKeys.includes(id)) {
             item.remove();
         }
@@ -419,7 +420,7 @@ function updateSheetData(newData, oldData) {
     });
 
     newKeys.forEach((id) => {
-        if (!oldKeys.includes(id)) {
+        if (!oldIds.includes(id)) {
             addMainItem(id, JSON.parse(newData[id]));
         } else {
             const oldDataStr = oldData[id];
@@ -802,7 +803,7 @@ function addMainItem(id, item) {
     const div = document.createElement('div');
     div.classList.add('main-item');
     div.setAttribute('spid', id);
-    mainPanel.appendChild(div);
+    mainPanel.prepend(div);
 
     const lastBar = document.createElement('div');
     lastBar.classList.add('main-item-lastbar');
