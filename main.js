@@ -949,6 +949,7 @@ function addMainItem(id, item) {
 
     const mainItemEditEvent = () => {
         openSpMenuStyle = id;
+        const item = sheetData.get(id);
         OpenAddSpMenu(item);
     }
 
