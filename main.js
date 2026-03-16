@@ -49,6 +49,8 @@ const searchInput = document.getElementById('search-input');
 const imageSearchInput = document.getElementById('image-search-input');
 const setUserImg = document.getElementById('edit-user-menu-contents').querySelector('img');
 
+const sizeList = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL", "7XL", "8XL", "9XL", "10XL", "100", "110", "120"];
+
 let openPanel = null;
 let isVertical = true;
 let openSpMenuStyle = "add new";
@@ -449,7 +451,15 @@ function updateMainItem(id, item) {
     mainName.textContent = item.name;
     lastBarName.textContent = item.name;
 
-    const sizeloop = item.size.split(/\s*,\s*/).length;
+    let sizeloop = item.size.split(/\s*,\s*/).length;
+
+    if (item.size.includes('-')) {
+        const [start, end] = item.size.toUpperCase().split('-').map(s => s.trim());
+        const startIndex = sizeList.indexOf(start);
+        const endIndex = sizeList.indexOf(end);
+        sizeloop = Math.abs(endIndex - startIndex ) + 1;
+    }
+
     let loadSL = "";
     let tong = 0;
     for (const [key, value] of Object.entries(item.sl)) {
@@ -831,7 +841,15 @@ function addMainItem(id, item) {
     name.textContent = item.name;
     content.appendChild(name);
 
-    const sizeloop = item.size.split(/\s*,\s*/).length;
+    let sizeloop = item.size.split(/\s*,\s*/).length;
+
+    if (item.size.includes('-')) {
+        const [start, end] = item.size.toUpperCase().split('-').map(s => s.trim());
+        const startIndex = sizeList.indexOf(start);
+        const endIndex = sizeList.indexOf(end);
+        sizeloop = Math.abs(endIndex - startIndex ) + 1;
+    }
+
     let loadSL = "";
     let tong = 0;
     for (const [key, value] of Object.entries(item.sl)) {
