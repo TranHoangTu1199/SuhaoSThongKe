@@ -190,6 +190,7 @@ export class LoadDataForDict {
             // SỬA LỖI 1: Nếu đang lưu (saving) thì KHÔNG return, chỉ BỎ QUA đoạn lấy dữ liệu
             if (!this.saving) { 
                 try {
+                    this.saving = true;
                     const data = await GetData(this.URL, this.page);
                     const newData = Object.fromEntries(data);
                     const newDataString = JSON.stringify(newData);
@@ -206,6 +207,7 @@ export class LoadDataForDict {
                         this.data = newData;
                         callback(this.data, oldDataObject);
                     }
+                    this.saving = false;
                 } catch (error) {
                     console.error(error);
                 }

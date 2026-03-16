@@ -460,7 +460,7 @@ function updateMainItem(id, item) {
 
     const thongtin = `
     Ngày: ${item.date}<br>
-    Size: ${item.size}<br><br>
+    &#60; ${item.size} &#62;<br><br>
     ${loadSL}<br>
     <span style="font-weight: bold;" class="main-item-code">#${item.code}<br></span>
     <span style="color: red;">- ${item.actor}<br>
@@ -844,7 +844,7 @@ function addMainItem(id, item) {
     thongtin.classList.add('main-item-thongtin');
     thongtin.innerHTML = `
     Ngày: ${item.date}<br>
-    Size: ${item.size}<br><br>
+    &#60; ${item.size} &#62;<br><br>
     ${loadSL}<br>
     <span style="font-weight: bold;" class="main-item-code">#${item.code}<br></span>
     <span style="color: red;">- ${item.actor}<br>
