@@ -431,6 +431,8 @@ function updateSheetData(newData, oldData) {
             }
         }
     });
+
+    resizeEvent();
 }
 
 function updateMainItem(id, item) {
@@ -1370,6 +1372,7 @@ function addSetupItem(EL, value, key, func, index) {
 const editMenu = document.getElementById('editMenu');
 const editMenuContent = document.getElementById('edit-menu-contents');
 function openEditMenu(list, func) {
+    list = [...(new Set(list))];
     list.forEach(item => {
         const div = document.createElement('div');
         div.classList.add('edit-menu-content-item');
