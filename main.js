@@ -306,7 +306,7 @@ function updateSetupData() {
     const editStylesSetup = stylesSetup.querySelector('.editBtn');
     editStylesSetup.addEventListener('click', () => {
         openEditMenu(stylesData, (newList) => {
-            stylesData = newList;
+            stylesData = [...(new Set(newList))];
             stylesData.sort();
             setupData.set('styles', stylesData);
             debouncedSave();
@@ -336,7 +336,7 @@ function updateSetupData() {
     const editFashionsSetup = fashionsSetup.querySelector('.editBtn');
     editFashionsSetup.addEventListener('click', () => {
         openEditMenu(fashionsData, (newList) => {
-            fashionsData = newList
+            fashionsData = [...(new Set(newList))];
             fashionsData.sort();
             setupData.set('fashions', fashionsData);
             debouncedSave();
