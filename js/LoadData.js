@@ -111,6 +111,7 @@ export class LoadDataForDict {
 
     async init() {
         const data = await GetData(this.URL, this.page);
+        if (data[0][0] === '') return;
         this.data = Object.fromEntries(data);
     }
 
