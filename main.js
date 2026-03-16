@@ -420,11 +420,11 @@ function updateSheetData(newData, oldData) {
     });
 
     newKeys.forEach((id) => {
+        const newDataStr = newData[id];
         if (!oldIds.includes(id)) {
-            addMainItem(id, JSON.parse(newData[id]));
+            addMainItem(id, JSON.parse(newDataStr));
         } else {
             const oldDataStr = oldData[id];
-            const newDataStr = newData[id];
             const newDataObj = JSON.parse(newDataStr);
             if (oldDataStr !== newDataStr) {
                 updateMainItem(id, newDataObj);
