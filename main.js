@@ -239,6 +239,13 @@ searchInput.addEventListener('input', loadFilterAndSearch);
 const setupData = new LoadDataForDict(scriptURL, "Setup");
 const debouncedSave = debounce(() => setupData.save(), 500);
 
+function render(params, element, key) {
+    element.innerHTML = '';
+    params.forEach((style, index) => {
+        addSetupItem(element, style, key, null, index)
+    });
+}
+
 function updateSetupData() {
     if (!setupData.check('years')) {
         setupData.set('years', ["2024", "2025", "2026"]);
@@ -297,13 +304,9 @@ function updateSetupData() {
         loadFilterAndSearch();
     });
 
-    if (!setupData.check('styles')) { setupData.set('styles', []); }
+    if (!setupData.check('styles')) setupData.set('styles', []);
     let stylesData = setupData.get('styles');
-    let index = 0;
-    stylesSetupContent.innerHTML = '';
-    stylesData.forEach(style => {
-        addSetupItem(stylesSetupContent, style, 'style', null, index++)
-    });
+    render(stylesData, stylesSetupContent, 'style');
 
     const editStylesSetup = stylesSetup.querySelector('.editBtn');
     editStylesSetup.addEventListener('click', () => {
@@ -312,11 +315,7 @@ function updateSetupData() {
             stylesData.sort();
             setupData.set('styles', stylesData);
             debouncedSave();
-            stylesSetupContent.innerHTML = '';
-            let index = 0;
-            stylesData.forEach(style => { 
-                addSetupItem(stylesSetupContent, style, 'style', null, index++)
-            });
+            render(stylesData, stylesSetupContent, 'style');
         });
     });
 
@@ -329,11 +328,7 @@ function updateSetupData() {
 
     if (!setupData.check('fashions')) { setupData.set('fashions', []); }
     let fashionsData = setupData.get('fashions');
-    index = 0;
-    fashionsSetupContent.innerHTML = '';
-    fashionsData.forEach(fashion => { 
-        addSetupItem(fashionsSetupContent, fashion, 'fashion', null, index++)
-    });
+    render(fashionsData, fashionsSetupContent, 'fashion');
 
     const editFashionsSetup = fashionsSetup.querySelector('.editBtn');
     editFashionsSetup.addEventListener('click', () => {
@@ -342,11 +337,7 @@ function updateSetupData() {
             fashionsData.sort();
             setupData.set('fashions', fashionsData);
             debouncedSave();
-            fashionsSetupContent.innerHTML = '';
-            let index = 0;
-            fashionsData.forEach(fashion => { 
-                addSetupItem(fashionsSetupContent, fashion, null, index++)
-            });
+            render(fashionsData, fashionsSetupContent, 'fashion');
         });
     });
 
@@ -1367,7 +1358,7 @@ function addSetupItem(EL, value, key, func, index) {
     div.classList.add(`checked-${key}s-setup`);
     EL.appendChild(div);
     // id: checkbox-styleEA0099 ...
-    const newID = `checkbox-${key}${index}`;
+    const newID = `checkbox-${key}-${index}`;
     
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
