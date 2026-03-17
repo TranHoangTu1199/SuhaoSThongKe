@@ -1241,22 +1241,8 @@ function OpenAddSpMenu(setup) {
     document.getElementById('app').inert = true;
     const stylesSetup = setupData.get('styles');
     const fashionsSetup = setupData.get('fashions');
-    addSpActorInput.innerHTML = '';
-    addSpGroupInput.innerHTML = '';
-
-    stylesSetup.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item;
-        option.textContent = item;
-        addSpGroupInput.appendChild(option);
-    });
-
-    fashionsSetup.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item;
-        option.textContent = item;
-        addSpActorInput.appendChild(option);
-    });
+    addSpActorInput.innerHTML = fashionsSetup.map(item => `<option value="${item}">${item}</option>`).join('');
+    addSpGroupInput.innerHTML = stylesSetup.map(item => `<option value="${item}">${item}</option>`).join('');
 
     if (setup) {
         addSpNameInput.value = setup.name
