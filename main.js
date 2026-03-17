@@ -96,7 +96,6 @@ userData.init().then(() => {
     const userName = myStorage.getToken('userName');
     const userPass = myStorage.getToken('userPass');
     logUserData.login(userName, userPass);
-    if (logUserData.loging) logUserData.setLogin();
     loadUser = true;
 })
 
@@ -147,11 +146,13 @@ function playRunForTimeToLoop(func, time, loop) {
 }
 
 function openLoadingBar() {
+    loadingBarFill.transition = '0.5s';
     loading.style.display = 'flex';
 }
 
 function closeLoadingBar() {
     loading.style.display = 'none';
+    loadingBarFill.transition = 'none';
     setLoadingBarValue(0);
 }
 
@@ -200,8 +201,6 @@ function checkFilter(item, filterConfig) {
 }
 
 function loadFilterAndSearch() {
-    // 1. TÍNH TOÁN CẤU HÌNH LỌC MỘT LẦN DUY NHẤT Ở ĐÂY
-    // Chú ý: Hãy chắc chắn toBoolean() ở các bước trước đã xử lý đúng giá trị này
     const isFilterActive = checkedSetup.checked;
     
     let activeStyles = [];
@@ -226,9 +225,7 @@ function loadFilterAndSearch() {
         fashions: activeFashions
     };
 
-    // 2. CHẠY VÒNG LẶP CHO TỪNG ITEM
     [...mainPanel.children].forEach(item => {
-        // Truyền filterConfig vào để dùng lại, không cần tính toán lại nữa
         const isMatch = checkFilter(item, filterConfig) && checkSearch(item);
         item.classList.toggle('hidden', !isMatch);
     });
@@ -239,17 +236,31 @@ searchInput.addEventListener('input', loadFilterAndSearch);
 const setupData = new LoadDataForDict(scriptURL, "Setup");
 const debouncedSave = debounce(() => setupData.save(), 500);
 
-function render(params, element, key) {
-    element.innerHTML = '';
-    params.forEach((style, index) => {
-        addSetupItem(element, style, key, null, index)
-    });
+function renderAddSetupItem(params, element, key) {
+    element.innerHTML = params.map((name, index) => {
+        return `
+            <div class="checked-${key}s-setup">
+                <input type="checkbox" value="${name}" id="checkbox-${key}-${index}" class="checked-${key}-setup">
+                <label for="checkbox-${key}-${index}">${name}</label>
+            </div>
+        `;
+    }).join('');
 }
 
-function updateSetupData() {
-    if (!setupData.check('years')) {
-        setupData.set('years', ["2024", "2025", "2026"]);
+document.addEventListener('change', (e) => {
+    if ([
+        'checked-style-setup', 
+        'checked-fashion-setup',
+        'checked-fashion-all',
+        'checked-style-all'
+    ].includes(e.target.className)) {
+        loadFilterAndSearch();
     }
+})
+
+checkedSetup.addEventListener('change', loadFilterAndSearch);
+function updateSetupData() {
+    if (!setupData.check('years')) setupData.set('years', ["2024", "2025", "2026"]);
 
     let years = setupData.get('years');
     const newdate = new Date();
@@ -261,52 +272,27 @@ function updateSetupData() {
         debouncedSave();
     }
 
-    yearSelect.innerHTML = '';
-    years.forEach(year => {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        yearSelect.appendChild(option);
-    });
-
+    yearSelect.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
     monthSelect.value = month;
     yearSelect.value = year;
-
     monthSelect.addEventListener('change', loadFilterAndSearch);
     yearSelect.addEventListener('change', loadFilterAndSearch);
 
     const editDateSetup = dateSetupPanel.querySelector('.editBtn');
     editDateSetup.addEventListener('click', () => {
-        openEditMenu(years, (newList) => {
+        openEditMenu(years, newList => {
             newList.sort();
             years = newList;
             setupData.set('years', newList);
             debouncedSave();
-
-            // Cập nhật lại yearSelect
-            yearSelect.innerHTML = '';
-            newList.forEach(year => {
-                const option = document.createElement('option');
-                option.value = year;
-                option.textContent = year;
-                yearSelect.appendChild(option);
-            });
-
+            yearSelect.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
             yearSelect.value = year;
         });
     });
 
-    let isChecked = false;
-    checkedSetup.addEventListener('change', () => {
-        if (checkedSetup.checked !== isChecked) {
-            isChecked = checkedSetup.checked;
-        }
-        loadFilterAndSearch();
-    });
-
     if (!setupData.check('styles')) setupData.set('styles', []);
     let stylesData = setupData.get('styles');
-    render(stylesData, stylesSetupContent, 'style');
+    renderAddSetupItem(stylesData, stylesSetupContent, 'style');
 
     const editStylesSetup = stylesSetup.querySelector('.editBtn');
     editStylesSetup.addEventListener('click', () => {
@@ -315,20 +301,17 @@ function updateSetupData() {
             stylesData.sort();
             setupData.set('styles', stylesData);
             debouncedSave();
-            render(stylesData, stylesSetupContent, 'style');
+            renderAddSetupItem(stylesData, stylesSetupContent, 'style');
         });
     });
 
     stylesSetupAll.addEventListener('change', () => {
-        stylesSetupContent.querySelectorAll('input').forEach(item => {
-            item.checked = stylesSetupAll.checked;
-        });
-        loadFilterAndSearch();
+        stylesSetupContent.querySelectorAll('input').forEach(item => item.checked = stylesSetupAll.checked);
     });
 
     if (!setupData.check('fashions')) { setupData.set('fashions', []); }
     let fashionsData = setupData.get('fashions');
-    render(fashionsData, fashionsSetupContent, 'fashion');
+    renderAddSetupItem(fashionsData, fashionsSetupContent, 'fashion');
 
     const editFashionsSetup = fashionsSetup.querySelector('.editBtn');
     editFashionsSetup.addEventListener('click', () => {
@@ -337,15 +320,12 @@ function updateSetupData() {
             fashionsData.sort();
             setupData.set('fashions', fashionsData);
             debouncedSave();
-            render(fashionsData, fashionsSetupContent, 'fashion');
+            renderAddSetupItem(fashionsData, fashionsSetupContent, 'fashion');
         });
     });
 
     fashionsSetupAll.addEventListener('change', () => {
-        fashionsSetupContent.querySelectorAll('input').forEach(item => {
-            item.checked = fashionsSetupAll.checked;
-        })
-        loadFilterAndSearch();
+        fashionsSetupContent.querySelectorAll('input').forEach(item => item.checked = fashionsSetupAll.checked);
     });
 
     loadSetup = true;
@@ -356,6 +336,41 @@ setupData.addChangeSheetCallback('Setup', updateSetupData);
 
 const sheetData = new LoadDataForDict(scriptURL, "Sheet1");
 const debouncedSaveSheet = debounce(() => sheetData.save(), 500);
+
+function spItemForm(item) {
+    const firstHtml = `
+    <div class="main-item-firstbar">
+        <img src="${item.img}" loading="lazy" class="main-item-img">
+        <div class="main-item-content">
+            <div class="main-item-name">${item.name}</div>
+            <div class="main-item-thongtin"></div>
+            <div class="main-item-btns">
+                <div class="main-item-cmt-btn"></div>
+                <div class="main-item-edit-btn"></div>
+                <div class="main-item-delete-btn"></div>
+            </div>
+        </div>
+    </div>
+    `;
+    
+    const newHtml = `
+        <div class="main-item" spid="${item.id}">
+            ${firstHtml}
+        </div>
+    `;
+
+    const lastHtml = `
+    <div class="main-item-lastbar">
+        ${firstHtml}
+        <div class="main-item-comment">
+            <div class="main-item-comment-content"></div>
+            <div class="main-item-rep-bar"></div>
+        </div>
+    </div>
+    `;
+
+    return newHtml;
+}
 
 function upSheetData() {
     // 1. Tạo một mảng tạm để chứa dữ liệu
@@ -788,20 +803,6 @@ loadImageInput.addEventListener('change', async () => {
     loadImageInput.value = ''; 
 });
 
-function resetCmtPanelViewIsOpen() {
-    if (isVertical) {
-        mainPanel.querySelectorAll('.main-item').forEach(item => {
-            item.classList.remove('main-item-row');
-            item.classList.add('main-item-col');
-        })
-    } else {
-        mainPanel.querySelectorAll('.main-item').forEach(item => {
-            item.classList.remove('main-item-col');
-            item.classList.add('main-item-row');
-        })
-    }
-}
-
 function addMainItem(id, item) {
     const div = document.createElement('div');
     div.classList.add('main-item');
@@ -956,7 +957,6 @@ function addMainItem(id, item) {
             lastBar.style.display = 'flex';
             mainPanel.style.overflowY = 'hidden';
         }
-        resetCmtPanelViewIsOpen();
     }
 
     const mainItemEditEvent = () => {
@@ -1338,79 +1338,46 @@ function resizeEvent() {
         const panelSize = window.innerWidth;
         document.documentElement.style.setProperty('--panel-size', `${panelSize}px`);
         document.documentElement.style.setProperty('--sp-menu-size', '100%');
-        document.querySelectorAll('.main-item-lastbar').forEach(item => {
-            item.classList.add('vertical');
-        })
+        document.querySelectorAll('.main-item-lastbar').forEach(item => item.classList.add('vertical'))
+        mainPanel.querySelectorAll('.main-item').forEach(item => item.classList.add('vertical'))
     } else {
         const panelSize = window.innerWidth * 0.35;
         document.documentElement.style.setProperty('--panel-size', `${panelSize}px`);
         document.documentElement.style.setProperty('--sp-menu-size', 'calc(var(--panel-size) * 1.2)');
-        document.querySelectorAll('.main-item-lastbar').forEach(item => {
-            item.classList.remove('vertical');
-        })
+        document.querySelectorAll('.main-item-lastbar').forEach(item => item.classList.remove('vertical'))
+        mainPanel.querySelectorAll('.main-item').forEach(item => item.classList.remove('vertical'))
     }
-
-    resetCmtPanelViewIsOpen();
-}
-
-function addSetupItem(EL, value, key, func, index) {
-    const div = document.createElement('div');
-    div.classList.add(`checked-${key}s-setup`);
-    EL.appendChild(div);
-    // id: checkbox-styleEA0099 ...
-    const newID = `checkbox-${key}-${index}`;
-    
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.value = value;
-    checkbox.id = newID;
-    checkbox.checked = false;
-    div.appendChild(checkbox);
-
-    const label = document.createElement('label');
-    label.textContent = value;
-    label.setAttribute('for', newID);
-    div.appendChild(label);
-
-    checkbox.addEventListener('change', () => { 
-        if (func) func(checkbox);
-        loadFilterAndSearch();
-    });
 }
 
 const editMenu = document.getElementById('editMenu');
 const editMenuContent = document.getElementById('edit-menu-contents');
 function openEditMenu(list, func) {
     list = [...(new Set(list))];
-    list.forEach(item => {
-        const div = document.createElement('div');
-        div.classList.add('edit-menu-content-item');
-        editMenuContent.appendChild(div);
-        const input = document.createElement('input');
-        input.value = item;
-        div.appendChild(input);
-        const deleteBtn = document.createElement('button');
-        div.appendChild(deleteBtn);
-
-        // Xóa div
-        deleteBtn.addEventListener('click', () => {
-            editMenuContent.removeChild(div);
-        });
-    });
+    list.sort();
+    editMenuContent.innerHTML = list.map(item => {
+        return `
+            <div class="edit-menu-content-item" title="${item}">
+                <input value="${item}">
+                <button class="edit-menu-content-item-remove-btn" title="${item}"></button>
+            </div>
+        `;
+    }).join('');
 
     editMenu.style.display = 'flex';
 
     const applyBtn = document.getElementById('edit-menu-btn-apply');
     applyBtn.onclick = () => {
-        const newList = [];
-        editMenuContent.querySelectorAll('input').forEach(input => {
-            newList.push(input.value);
-        });
-        if (func) func(newList);
+        if (func) func([...editMenuContent.querySelectorAll('input')].map(input => input.value));
         editMenu.style.display = 'none';
-        editMenuContent.innerHTML = '';
     };
 }
+
+document.addEventListener('click', (e) => {
+    if (e.target.className === 'edit-menu-content-item-remove-btn') { 
+        const rmvEl = editMenuContent.querySelector(`[title="${e.target.title}"]`);
+        rmvEl.remove();
+    }
+});
 
 addSpImageBox.addEventListener('click', () => {
     imageBar.style.display = 'flex';
@@ -1486,32 +1453,21 @@ addSpMenuAddBtn.addEventListener('click', () => {
 
 addSpMenuApplyBtn.addEventListener('click', async () => {
     if (openSpMenuStyle === "add new") {
-        const date = addSpDateInput.value;
-        const actor = addSpActorInput.value;
-        const group = addSpGroupInput.value;
-        const name = addSpNameInput.value;
-        const size = addSpSizeInput.value;
-        const code = addSpCodeInput.value;
-        const img = addSpImageBox.src;
-        const id = `${name} - ${new Date().getTime()}`;
+        const sl = Object.fromEntries([...addSpMenu.querySelectorAll('.add-sp-item')].map(item => [
+            item.querySelector('input[type="text"]').value,
+            item.querySelector('input[type="number"]').value
+        ]));
 
-        let sl = {};
-        addSpMenu.querySelectorAll('.add-sp-item').forEach(item => {
-            const color = item.querySelector('input').value;
-            const quantity = item.querySelector('input[type="number"]').value;
-            sl[color] = quantity;
-        })
-
-        let newItems = {
-            date: date,
-            actor: actor,
-            group: group,
-            name: name,
-            size: size,
-            code: code,
+        const newItems = {
+            date: addSpDateInput.value,
+            actor: addSpActorInput.value,
+            group: addSpGroupInput.value,
+            name: addSpNameInput.value,
+            size: addSpSizeInput.value,
+            code: addSpCodeInput.value,
             sl: sl,
-            img: img,
-            id: id,
+            img: addSpImageBox.src,
+            id: `${name} - ${new Date().getTime()}`,
             cmts: []
         }
 
@@ -1521,32 +1477,21 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
         sheetData.set(id, newItems);
         debouncedSaveSheet();
     } else {
-        const date = addSpDateInput.value;
-        const actor = addSpActorInput.value;
-        const group = addSpGroupInput.value;
-        const name = addSpNameInput.value;
-        const size = addSpSizeInput.value;
-        const code = addSpCodeInput.value;
-        const img = addSpImageBox.src;
-        const id = openSpMenuStyle;
+        const sl = Object.fromEntries([...addSpMenu.querySelectorAll('.add-sp-item')].map(item => [
+            item.querySelector('input[type="text"]').value,
+            item.querySelector('input[type="number"]').value
+        ]));
 
-        let sl = {};
-        addSpMenu.querySelectorAll('.add-sp-item').forEach(item => {
-            const color = item.querySelector('input').value;
-            const quantity = item.querySelector('input[type="number"]').value;
-            sl[color] = quantity;
-        })
-
-        let newItems = {
-            date: date,
-            actor: actor,
-            group: group,
-            name: name,
-            size: size,
-            code: code,
+        const newItems = {
+            date: addSpDateInput.value,
+            actor: addSpActorInput.value,
+            group: addSpGroupInput.value,
+            name: addSpNameInput.value,
+            size: addSpSizeInput.value,
+            code: addSpCodeInput.value,
             sl: sl,
-            img: img,
-            id: id,
+            img: addSpImageBox.src,
+            id: openSpMenuStyle,
             cmts: []
         }
 
@@ -1557,6 +1502,7 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
         sheetData.set(id, newItems);
         debouncedSaveSheet();
     }
+
     resizeEvent();
 })
 

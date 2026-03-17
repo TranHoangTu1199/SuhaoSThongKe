@@ -101,6 +101,7 @@ export class LoginUser {
                 this.id = key;
             }
         })
+        if (this.loging) this.setLogin();
     }
 
     logout() {
