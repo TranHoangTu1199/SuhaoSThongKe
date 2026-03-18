@@ -623,17 +623,16 @@ async function loadPasteImage(e, callback) {
 
         if (base64Data && base64Data.startsWith('data:image')) {
             callback(base64Data);
-            const name = `${Math.random() * 999} - ${file.name}`
+            const name = `${file.name} - ${new Date().getTime()}`
             const driveUrl = await uploadImageToDrive(base64Data, name);
             const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
             const imgId = fileIdMatch ? fileIdMatch[0] : '';
             const ggUrl = `https://lh3.googleusercontent.com/u/0/d/${imgId}=s400`;
-            const id = `${name} - ${new Date().getTime()}`
-            imageDict.set(id, {
+            imageDict.set(name, {
                 name: name,
                 img: ggUrl,
                 date: new Date().toISOString().split('T')[0],
-                id: id
+                id: name
             });
             imageDict.save();
             // tìm Element có src hoặc style background image data:image
