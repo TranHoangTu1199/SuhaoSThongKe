@@ -58,7 +58,6 @@ let loadSetup = false;
 let loadSheet = false;
 let loadUser = false;
 let addImgStyle = 'default';
-let savingImg = null;
 const tokenKey = 'userToken-SuhaoApp';
 let myStorage = {
     token: localStorage.getItem(tokenKey),
@@ -613,6 +612,7 @@ async function loadPasteImage(e, callback) {
     
     // Nếu tìm thấy một item là ảnh
     if (imageItem) {
+        e.preventDefault();
         const file = imageItem.getAsFile();
         const base64Data = await new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -623,18 +623,28 @@ async function loadPasteImage(e, callback) {
 
         if (base64Data && base64Data.startsWith('data:image')) {
             callback(base64Data);
-            const driveUrl = await uploadImageToDrive(base64Data, `${Math.random() * 999} - ${file.name}`);
+            const name = `${Math.random() * 999} - ${file.name}`
+            const driveUrl = await uploadImageToDrive(base64Data, name);
             const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
             const imgId = fileIdMatch ? fileIdMatch[0] : '';
+            const ggUrl = `https://lh3.googleusercontent.com/u/0/d/${imgId}=s400`;
+            const id = `${name} - ${new Date().getTime()}`
+            imageDict.set(id, {
+                name: name,
+                img: ggUrl,
+                date: new Date().toISOString().split('T')[0],
+                id: id
+            });
+            imageDict.save();
             // tìm Element có src hoặc style background image data:image
             document.querySelectorAll('[src], [style]').forEach((el) => {
                 const src = el.getAttribute('src');
                 if (src && src === base64Data) {
-                    el.setAttribute('src', `https://lh3.googleusercontent.com/u/0/d/${imgId}=s400`);
+                    el.setAttribute('src', ggUrl);
                 } else {
                     const backgroundImage = el.style.backgroundImage;
                     if (backgroundImage && backgroundImage.includes(base64Data)) {
-                        el.style.backgroundImage = `url(https://lh3.googleusercontent.com/u/0/d/${imgId}=s400)`;
+                        el.style.backgroundImage = ggUrl;
                     }
                 }
             });
@@ -646,10 +656,8 @@ document.addEventListener('paste', async (e) => {
     const tg = e.target;
     
     if (tg.className === 'main-item-rep-input') {
-        e.preventDefault();
         await loadPasteImage(e, (img) => upImageToCmt(img));
     } else if (tg.id === 'add-sp-name-input') {
-        e.preventDefault();
         const imgEl = tg.parentElement.parentElement.querySelector('img');
         await loadPasteImage(e, (img) => { imgEl.src = img; });
     }
@@ -1541,9 +1549,9 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
 
         addSpMenu.style.display = 'none';
         document.getElementById('app').inert = false;
-        updateMainItem(id, newItems)
+        updateMainItem(newItems.id, newItems)
         sheetData.remove(openSpMenuStyle);
-        sheetData.set(id, newItems);
+        sheetData.set(newItems.id, newItems);
         debouncedSaveSheet();
     }
 
