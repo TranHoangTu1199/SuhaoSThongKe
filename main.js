@@ -58,6 +58,7 @@ let loadSetup = false;
 let loadSheet = false;
 let loadUser = false;
 let addImgStyle = 'default';
+let savingImg = null;
 const tokenKey = 'userToken-SuhaoApp';
 let myStorage = {
     token: localStorage.getItem(tokenKey),
@@ -508,7 +509,6 @@ const imageDict = new LoadDataForDict(scriptURL, "Image");
 function updateImageData() {
     let dateDict = {};
     let dateList = [];
-    imageContents.innerHTML = '';
     imageDict.forEach((key, value) => {
         const vl = JSON.parse(value);
         if (!dateDict[vl.date]) { 
@@ -525,82 +525,135 @@ function updateImageData() {
         return dateB - dateA;
     });
 
-    dateList.forEach((date) => {
+    imageContents.innerHTML = dateList.map((date) => {
         const images = dateDict[date];
         const dateStrFirst = new Date(date).toString().split(' ').slice(0, 1)
         const dateStr = `${dateStrFirst} ${date.split('-').reverse().join('/')}`;
-        const dateDiv = document.createElement('div');
-        dateDiv.classList.add('image-date-bar');
-        dateDiv.setAttribute('data-date', date);
-        dateDiv.innerHTML = `<p>${dateStr}</p>`;
-        imageContents.appendChild(dateDiv);
-
-        const contentDiv = document.createElement('div');
-        contentDiv.classList.add('image-content-bar');
-        dateDiv.appendChild(contentDiv);
-
-        images.forEach((image) => {
-            const imageDiv = document.createElement('div');
-            imageDiv.classList.add('image-item-bar');
-            imageDiv.title = image.name;
-            imageDiv.innerHTML = `<img src="${image.img}" alt="${image.name}">`;
-            contentDiv.appendChild(imageDiv);
-
-            const imageName = document.createElement('div');
-            imageName.textContent = image.name;
-            imageDiv.appendChild(imageName);
-
-            imageName.addEventListener('dblclick', () => {
-                imageName.contentEditable = true;
-                imageName.classList.add('editable');
-            });
-
-            imageName.addEventListener('blur', () => {
-                imageName.contentEditable = false;
-                image.name = imageName.textContent;
-                imageDiv.title = image.name;
-                imageDict.set(image.id, image);
-                imageDict.save();
-                imageName.classList.remove('editable');
-            });
-
-            imageName.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    imageName.contentEditable = false;
-                    image.name = imageName.textContent;
-                    imageDiv.title = image.name;
-                    imageDict.set(image.id, image);
-                    imageDict.save();
-                    imageName.classList.remove('editable');
-                }
-            })
-
-            let pressTimer;
-            imageName.addEventListener('touchstart', () => {
-                pressTimer = setTimeout(() => {
-                    imageName.contentEditable = true;
-                    imageName.classList.add('editable');
-                }, 600);
-            })
-
-            imageName.addEventListener('touchend', () => {
-                clearTimeout(pressTimer);
-            })
-
-            imageName.addEventListener('touchmove', () => {
-                clearTimeout(pressTimer);
-            })
-
-            imageDiv.addEventListener('click', () => {
-                // Xóa selected class cơ bản
-                const selected = document.querySelector('.image-item-bar.selected');
-                if (selected) { selected.classList.remove('selected'); }
-
-                imageDiv.classList.add('selected');
-            })
-        });
-    })
+        return `
+        <div class="image-date-bar" data-date="${date}">
+            <p>${dateStr}</p>
+            <div class="image-content-bar">
+                ${images.map((image) => {
+                    return `
+                    <div class="image-item-bar" title="${image.name}" imgid="${image.id}">
+                        <img src="${image.img}" alt="${image.name}">
+                        <div class="image-item-bar-name">${image.name}</div>
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+        `;
+    }).join('');
 }
+
+document.addEventListener('click', (e) => {
+    const parent = e.target.parentElement;
+    if (parent && parent.className === 'image-item-bar') {
+        const selected = document.querySelector('.image-item-bar.selected');
+        if (selected) { selected.classList.remove('selected'); }
+        parent.classList.add('selected');
+    }
+})
+
+const imgForcutIn = (tg) => {
+    tg.contentEditable = true;
+    tg.classList.add('editable');
+}
+
+const imgForcutOut = (tg) => {
+    tg.contentEditable = false;
+    tg.classList.remove('editable');
+    const parent = tg.parentElement;
+    parent.title = tg.textContent;
+    const id = parent.getAttribute('imgid');
+    const img = imageDict.get(id);
+    img.name = tg.textContent;
+    imageDict.set(id, img);
+    imageDict.save();
+}
+
+document.addEventListener('dblclick', (e) => {
+    const tg = e.target;
+    if (tg.classList.contains('image-item-bar-name')) imgForcutIn(tg);
+})
+
+document.addEventListener('focusout', (e) => {
+    const tg = e.target;
+    if (tg.classList.contains('image-item-bar-name')) imgForcutOut(tg);
+})
+
+let pressTimer;
+document.addEventListener('touchstart', (e) => {
+    const tg = e.target;
+    if (tg.classList.contains('image-item-bar-name')) {
+        pressTimer = setTimeout(() => {
+            imgForcutIn(tg);
+        }, 600);
+    }
+})
+
+document.addEventListener('touchend', (e) => {
+    const tg = e.target;
+    if (tg.classList.contains('image-item-bar-name')) {
+        clearTimeout(pressTimer);
+    }
+})
+
+document.addEventListener('touchmove', (e) => {
+    const tg = e.target;
+    if (tg.classList.contains('image-item-bar-name')) {
+        clearTimeout(pressTimer);
+    }
+})
+
+async function loadPasteImage(e, callback) {
+    const clipboard = e.clipboardData || window.clipboardData;
+    const imageItem = Array.from(clipboard.items).find(item => item.type.includes('image'));
+    
+    // Nếu tìm thấy một item là ảnh
+    if (imageItem) {
+        const file = imageItem.getAsFile();
+        const base64Data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+
+        if (base64Data && base64Data.startsWith('data:image')) {
+            callback(base64Data);
+            const driveUrl = await uploadImageToDrive(base64Data, `${Math.random() * 999} - ${file.name}`);
+            const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
+            const imgId = fileIdMatch ? fileIdMatch[0] : '';
+            // tìm Element có src hoặc style background image data:image
+            document.querySelectorAll('[src], [style]').forEach((el) => {
+                const src = el.getAttribute('src');
+                if (src && src === base64Data) {
+                    el.setAttribute('src', `https://lh3.googleusercontent.com/u/0/d/${imgId}=s400`);
+                } else {
+                    const backgroundImage = el.style.backgroundImage;
+                    if (backgroundImage && backgroundImage.includes(base64Data)) {
+                        el.style.backgroundImage = `url(https://lh3.googleusercontent.com/u/0/d/${imgId}=s400)`;
+                    }
+                }
+            });
+        }
+    }
+}
+
+document.addEventListener('paste', async (e) => {
+    const tg = e.target;
+    
+    if (tg.className === 'main-item-rep-input') {
+        e.preventDefault();
+        await loadPasteImage(e, (img) => upImageToCmt(img));
+    } else if (tg.id === 'add-sp-name-input') {
+        e.preventDefault();
+        const imgEl = tg.parentElement.parentElement.querySelector('img');
+        await loadPasteImage(e, (img) => { imgEl.src = img; });
+    }
+})
 
 imageDict.init().then(updateImageData);
 imageDict.addChangeSheetCallback('Image', updateImageData);
@@ -638,27 +691,32 @@ removeImageBtn.addEventListener('click', async () => {
     }
 });
 
+function upImageToCmt(img) {
+    const ldiv = document.body.querySelector('.main-item-lastbar[style="display: flex;"]');
+    const repBar = ldiv.querySelector('.main-item-rep-bar');
+    const limgbar = document.createElement('div');
+    repBar.querySelector('.limgbar')?.remove();
+    limgbar.classList.add('limgbar');
+    repBar.appendChild(limgbar);
+    const limg = document.createElement('div');
+    limg.classList.add('add-img-to-cmt');
+    limg.style.backgroundImage = `url("${img}")`;
+    limgbar.appendChild(limg);
+    const removeBtn = document.createElement('div');
+    removeBtn.classList.add('remove-img-to-cmt');
+    removeBtn.textContent = '✕';
+    limg.appendChild(removeBtn);
+    removeBtn.addEventListener('click', () => {
+        limgbar.remove();
+    })
+}
+
 applyImageBtn.addEventListener('click', () => {
     const selected = document.querySelector('.image-item-bar.selected');
     if (selected) {
         if (addImgStyle === 'cmt') {
-            const ldiv = document.body.querySelector('.main-item-lastbar[style="display: flex;"]');
-            const repBar = ldiv.querySelector('.main-item-rep-bar');
-            const limgbar = document.createElement('div');
-            repBar.querySelector('.limgbar')?.remove();
-            limgbar.classList.add('limgbar');
-            repBar.appendChild(limgbar);
-            const limg = document.createElement('div');
-            limg.classList.add('add-img-to-cmt');
-            limg.style.backgroundImage = `url("${selected.querySelector('img').src}")`;
-            limgbar.appendChild(limg);
-            const removeBtn = document.createElement('div');
-            removeBtn.classList.add('remove-img-to-cmt');
-            removeBtn.textContent = '✕';
-            limg.appendChild(removeBtn);
-            removeBtn.addEventListener('click', () => {
-                limgbar.remove();
-            })
+            const img = selected.querySelector('img').src;
+            upImageToCmt(img);
         } else if (addImgStyle === 'default') {
             const img = selected.querySelector('img').src;
             addSpImageBox.src = img;
@@ -1453,7 +1511,7 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
             code: addSpCodeInput.value,
             sl: sl,
             img: addSpImageBox.src,
-            id: `${name} - ${new Date().getTime()}`,
+            id: `${addSpNameInput.value} - ${new Date().getTime()}`,
             cmts: []
         }
 

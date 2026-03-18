@@ -1123,6 +1123,12 @@ select {
 
 .image-item-bar > div.editable {
     text-overflow: clip;
+    border: black solid 1px;
+    border-radius: var(--border-radius);
+}
+
+.image-item-bar > div.editable:focus {
+    outline: none;
 }
 
 .image-item-bar:hover {
@@ -1158,7 +1164,7 @@ select {
     left: 0;
     bottom: calc(var(--panel-size) * 0.09);
     width: 100%;
-    height: calc(var(--panel-size) * 0.26);
+    height: calc(var(--panel-size) * 0.31);
     display: flex;
     justify-content: left;
     align-items: center;
