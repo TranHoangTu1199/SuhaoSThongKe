@@ -1457,10 +1457,10 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
             cmts: []
         }
 
-        addMainItem(id, newItems);
+        addMainItem(newItems.id, newItems);
         addSpMenu.style.display = 'none';
         document.getElementById('app').inert = false;
-        sheetData.set(id, newItems);
+        sheetData.set(newItems.id, newItems);
         debouncedSaveSheet();
     } else {
         const sl = Object.fromEntries([...addSpMenu.querySelectorAll('.add-sp-item')].map(item => [
