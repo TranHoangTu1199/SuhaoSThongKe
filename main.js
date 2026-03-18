@@ -109,6 +109,18 @@ function debounce(func, timeout = 500) {
     };
 }
 
+let imageHaseDict = {};
+async function createHash(base64String) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(base64String);
+    // Dùng thuật toán SHA-256 của trình duyệt
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    // Biến đổi thành chuỗi chữ và số
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+}
+
 // Tạo một Object để lưu trữ các interval ID
 const activeTimers = {};
 
@@ -623,17 +635,28 @@ async function loadPasteImage(e, callback) {
 
         if (base64Data && base64Data.startsWith('data:image')) {
             callback(base64Data);
-            const name = `${file.name} - ${new Date().getTime()}`
-            const driveUrl = await uploadImageToDrive(base64Data, name);
-            const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
-            const imgId = fileIdMatch ? fileIdMatch[0] : '';
-            const ggUrl = `https://lh3.googleusercontent.com/u/0/d/${imgId}=s400`;
+            const hash = await createHash(base64Data);
+            let name, ggUrl;
+            if (imageHaseDict[hash]) {
+                name = imageHaseDict[hash].id;
+                ggUrl = imageHaseDict[hash].url;
+            } else {
+                name = `${file.name} - ${new Date().getTime()}`
+                const driveUrl = await uploadImageToDrive(base64Data, name);
+                const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
+                const imgId = fileIdMatch ? fileIdMatch[0] : '';
+                ggUrl = `https://lh3.googleusercontent.com/u/0/d/${imgId}=s400`;
+                imageHaseDict[hash] = { id: name, url: ggUrl };
+            }
+
             imageDict.set(name, {
                 name: name,
                 img: ggUrl,
                 date: new Date().toISOString().split('T')[0],
-                id: name
+                id: name,
+                hash: hash
             });
+
             imageDict.save();
             // tìm Element có src hoặc style background image data:image
             document.querySelectorAll('[src], [style]').forEach((el) => {
@@ -662,7 +685,15 @@ document.addEventListener('paste', async (e) => {
     }
 })
 
-imageDict.init().then(updateImageData);
+imageDict.init().then(() => {
+    updateImageData();
+    imageDict.forEach((key, value) => {
+        const vl = JSON.parse(value);
+        if (vl.hash) {
+            imageHaseDict[vl.hash] = { id: key, url: vl.img }
+        };
+    })
+});
 imageDict.addChangeSheetCallback('Image', updateImageData);
 
 addImageBtn.addEventListener('click', () => {
@@ -785,19 +816,29 @@ loadImageInput.addEventListener('change', async () => {
             }, 100, 100);
             
             // Upload ảnh lên Drive
-            const driveUrl = await uploadImageToDrive(base64Data, file.name);
+            let id, img;
+            const hash = await createHash(base64Data);
+            if (imageHaseDict[hash]) {
+                id = imageHaseDict[hash].id;
+                img = imageHaseDict[hash].url;
+            } else {
+                id = `${file.name} - ${date}`
+                const driveUrl = await uploadImageToDrive(base64Data, file.name);
+                const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
+                const imgId = fileIdMatch ? fileIdMatch[0] : '';
+                img = `https://lh3.googleusercontent.com/u/0/d/${imgId}=s400`;
+                imageHaseDict[hash] = { id, url: img };
+            }
+
             setLoadingBarValue(100, `Hoàn tất ảnh ${i + 1}... `);
-            
-            const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
-            const imgId = fileIdMatch ? fileIdMatch[0] : '';
-            const img = `https://lh3.googleusercontent.com/u/0/d/${imgId}=s400`;
 
             // Thêm vào dữ liệu
             const newItem = {
                 name: file.name,
                 img: img,
                 date: date,
-                id: `${file.name} - ${date}`,
+                id: id,
+                hash: hash
             };
 
             const imageDiv = document.createElement('div');
