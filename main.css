@@ -89,12 +89,11 @@ select {
 }
 
 #login-acc-avt {
-    background-image: url('icon/user.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    width: calc(var(--header-height) * 0.74);
-    height: calc(var(--header-height) * 0.74);
+    width: calc(var(--header-height) * 0.73);
+    height: calc(var(--header-height) * 0.73);
     border-radius: calc(var(--panel-size) * 0.05);
 }
 
