@@ -140,11 +140,8 @@ function stopRunForTime(id) {
 }
 
 function playRunForTimeToLoop(func, time, loop) {
-    // Nếu số lần lặp <= 0 thì không làm gì cả
     if (loop <= 0) return;
-
-    let count = 0; // Biến đếm số lần đã chạy
-
+    let count = 0;
     // Bắt đầu vòng lặp và lưu ID của nó (cục bộ)
     const intervalId = setInterval(() => {
         func(count, loop);  // Thực thi hàm
@@ -480,8 +477,10 @@ function updateMainItem(id, item) {
     let loadSL = "";
     let tong = 0;
     for (const [key, value] of Object.entries(item.sl)) {
-        loadSL += `- ${key}: ${value} / ${sizeloop * value}<br>`;
-        tong += parseInt(value);
+        const kn = key.split(/\s*,\s*/)?.length || 1;
+        const sl = parseInt(value) * kn;
+        loadSL += `- ${key}: ${value} / ${sizeloop * sl}<br>`;
+        tong += sl;
     }
     loadSL += `Tổng: ${tong} / ${sizeloop * tong}<br>`;
 
@@ -889,8 +888,10 @@ function addMainItem(id, item) {
     let loadSL = "";
     let tong = 0;
     for (const [key, value] of Object.entries(item.sl)) {
-        loadSL += `- ${key}: ${value} / ${sizeloop * value}<br>`;
-        tong += parseInt(value);
+        const kn = key.split(/\s*,\s*/)?.length || 1;
+        const sl = parseInt(value) * kn;
+        loadSL += `- ${key}: ${value} / ${sizeloop * sl}<br>`;
+        tong += sl;
     }
     loadSL += `Tổng: ${tong} / ${sizeloop * tong}<br>`;
 
