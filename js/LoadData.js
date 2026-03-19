@@ -139,7 +139,6 @@ export class LoadDataForDict {
             try {
                 const dataArray = Object.entries(this.data);
                 await SetData(dataArray, this.URL, this.page);
-                console.log("Đã lưu an toàn lên Sheets!");
             } catch (error) {
                 console.error("Lỗi mất mạng khi lưu:", error);
             } finally {

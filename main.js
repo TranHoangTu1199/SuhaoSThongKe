@@ -395,9 +395,19 @@ function upSheetData() {
 
     // 3. Sắp xếp mảng theo ngày (item.date)
     tempItems.sort((a, b) => {
-        const dateA = new Date(a.itemData.date);
-        const dateB = new Date(b.itemData.date);
-        return dateA - dateB;
+        const dateA = new Date(a.itemData.date).getTime();
+        const dateB = new Date(b.itemData.date).getTime();
+        if (dateA !== dateB) return dateA - dateB;
+
+        // --- BẬC 2: Nếu Ngày giống hệt nhau, xét tới MÃ (Code) ---
+        const codeA = Number(a.itemData.code) || 0; 
+        const codeB = Number(b.itemData.code) || 0;
+        if (codeA !== codeB) return codeA - codeB;
+
+        // --- BẬC 3: Nếu Mã cũng trùng nốt, xét tới TÊN (Name) ---
+        const nameA = String(a.itemData.name || "");
+        const nameB = String(b.itemData.name || "");
+        return nameA.localeCompare(nameB);
     });
 
     // 4. Lặp qua mảng đã sắp xếp để in ra màn hình
@@ -477,7 +487,13 @@ function updateMainItem(id, item) {
     let loadSL = "";
     let tong = 0;
     for (const [key, value] of Object.entries(item.sl)) {
-        const kn = key.split(/\s*,\s*/)?.length || 1;
+        let kn = key.split(/\s*,\s*/)?.length || 1;
+        if (key.includes('-')) {
+            const [start, end] = key.toUpperCase().split('-').map(s => s.trim());
+            const startIndex = sizeList.indexOf(start);
+            const endIndex = sizeList.indexOf(end);
+            kn = Math.abs(endIndex - startIndex ) + 1;
+        }
         const sl = parseInt(value) * kn;
         loadSL += `- ${key}: ${value} / ${sizeloop * sl}<br>`;
         tong += sl;
@@ -888,7 +904,13 @@ function addMainItem(id, item) {
     let loadSL = "";
     let tong = 0;
     for (const [key, value] of Object.entries(item.sl)) {
-        const kn = key.split(/\s*,\s*/)?.length || 1;
+        let kn = key.split(/\s*,\s*/)?.length || 1;
+        if (key.includes('-')) {
+            const [start, end] = key.toUpperCase().split('-').map(s => s.trim());
+            const startIndex = sizeList.indexOf(start);
+            const endIndex = sizeList.indexOf(end);
+            kn = Math.abs(endIndex - startIndex ) + 1;
+        }
         const sl = parseInt(value) * kn;
         loadSL += `- ${key}: ${value} / ${sizeloop * sl}<br>`;
         tong += sl;
