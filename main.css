@@ -92,9 +92,9 @@ select {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    width: calc(var(--header-height) * 0.73);
-    height: calc(var(--header-height) * 0.73);
-    border-radius: calc(var(--panel-size) * 0.05);
+    width: calc(var(--header-height) * 0.75);
+    height: calc(var(--header-height) * 0.75);
+    border-radius: 50%;
 }
 
 #log-box {
@@ -1295,15 +1295,14 @@ select {
 }
 
 .main-item-cmt-setup {
-    font-size: calc(var(--panel-size) * 0.026);
+    font-size: calc(var(--panel-size) * 0.08);
     font-weight: normal;
     cursor: pointer;
     color: #242424;
     margin-left: calc(var(--panel-size) * 0.015);
-    height: calc(var(--panel-size) * 0.05);
     width: calc(var(--panel-size) * 0.07);
     text-align: center;
-    justify-content: center;
+    justify-content: top;
     align-items: center;
     align-content: center;
 }

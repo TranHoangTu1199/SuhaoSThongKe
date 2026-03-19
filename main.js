@@ -1166,7 +1166,7 @@ function addCmtToCmtPanel(panel, cmt, index) {
 
     const setupCmt = document.createElement('div');
     setupCmt.classList.add('main-item-cmt-setup');
-    setupCmt.textContent = '●●●';
+    setupCmt.innerHTML = '&#776;'
     cmtNote.appendChild(setupCmt);
 
     let cmtStr = '';
