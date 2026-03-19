@@ -106,7 +106,9 @@ export class LoadDataForDict {
         this.page = page;
         this.oldData = null;
         this.activeTimers = {};
-        this.saving = false;
+        this.isSaving = false;
+        this.loadSheeting = false;
+        this.saveTimer = null;
     }
 
     async init() {
@@ -119,11 +121,33 @@ export class LoadDataForDict {
         this.data = {};
     }
 
-    async save() {
-        this.saving = true;
-        const dataArray = Object.entries(this.data);
-        await SetData(dataArray, this.URL, this.page);
-        this.saving = false;
+    save(timeout = 500) {
+        // 1. CHỐNG SPAM CLICK/GÕ (Debounce tuyệt hảo của bạn)
+        clearTimeout(this.saveTimer);
+        this.saveTimer = setTimeout(async () => {
+            
+            // 2. KHÓA BẢO VỆ MẠNG (Chống 2 cục data tông nhau trên đường truyền)
+            if (this.isSaving) {
+                console.log("Mạng đang kẹt cục data trước, hẹn lại tí nữa lưu...");
+                this.save(timeout); // Gọi lại chính nó để đặt lại đồng hồ
+                return;
+            }
+
+            // Khóa cửa lại để bắt đầu đẩy data lên mạng
+            this.isSaving = true;
+
+            try {
+                const dataArray = Object.entries(this.data);
+                await SetData(dataArray, this.URL, this.page);
+                console.log("Đã lưu an toàn lên Sheets!");
+            } catch (error) {
+                console.error("Lỗi mất mạng khi lưu:", error);
+            } finally {
+                // Mở khóa cửa (Luôn chạy dù thành công hay lỗi)
+                this.isSaving = false; 
+            }
+
+        }, timeout);
     }
 
     remove(key) {
@@ -188,9 +212,9 @@ export class LoadDataForDict {
             if (!this.activeTimers[key]) return;
 
             // SỬA LỖI 1: Nếu đang lưu (saving) thì KHÔNG return, chỉ BỎ QUA đoạn lấy dữ liệu
-            if (!this.saving) { 
+            if (!this.isSaving && !this.loadSheeting) {
                 try {
-                    this.saving = true;
+                    this.loadSheeting = true;
                     const data = await GetData(this.URL, this.page);
                     const newData = Object.fromEntries(data);
                     const newDataString = JSON.stringify(newData);
@@ -207,9 +231,10 @@ export class LoadDataForDict {
                         this.data = newData;
                         callback(this.data, oldDataObject);
                     }
-                    this.saving = false;
                 } catch (error) {
                     console.error(error);
+                } finally {
+                    this.loadSheeting = false;
                 }
             }
 

@@ -155,6 +155,8 @@ function playRunForTimeToLoop(func, time, loop) {
             clearInterval(intervalId);
         }
     }, time);
+
+    return intervalId;
 }
 
 function openLoadingBar() {
@@ -244,9 +246,7 @@ function loadFilterAndSearch() {
 }
 
 searchInput.addEventListener('input', loadFilterAndSearch);
-
 const setupData = new LoadDataForDict(scriptURL, "Setup");
-const debouncedSave = debounce(() => setupData.save(), 500);
 
 function renderAddSetupItem(params, element, key) {
     element.innerHTML = params.map((name, index) => {
@@ -281,7 +281,7 @@ function updateSetupData() {
     if (!years.includes(year)) {
         years.push(year);
         setupData.set('years', years);
-        debouncedSave();
+        setupData.save();
     }
 
     yearSelect.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
@@ -296,7 +296,7 @@ function updateSetupData() {
             newList.sort();
             years = newList;
             setupData.set('years', newList);
-            debouncedSave();
+            setupData.save();
             yearSelect.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
             yearSelect.value = year;
         });
@@ -312,7 +312,7 @@ function updateSetupData() {
             stylesData = [...(new Set(newList))];
             stylesData.sort();
             setupData.set('styles', stylesData);
-            debouncedSave();
+            setupData.save();
             renderAddSetupItem(stylesData, stylesSetupContent, 'style');
         });
     });
@@ -331,7 +331,7 @@ function updateSetupData() {
             fashionsData = [...(new Set(newList))];
             fashionsData.sort();
             setupData.set('fashions', fashionsData);
-            debouncedSave();
+            setupData.save();
             renderAddSetupItem(fashionsData, fashionsSetupContent, 'fashion');
         });
     });
@@ -347,7 +347,6 @@ setupData.init().then(updateSetupData);
 setupData.addChangeSheetCallback('Setup', updateSetupData);
 
 const sheetData = new LoadDataForDict(scriptURL, "Sheet1");
-const debouncedSaveSheet = debounce(() => sheetData.save(), 500);
 
 function spItemForm(item) {
     const firstHtml = `
@@ -659,19 +658,25 @@ async function loadPasteImage(e, callback) {
 
             imageDict.save();
             // tìm Element có src hoặc style background image data:image
-            document.querySelectorAll('[src], [style]').forEach((el) => {
-                const src = el.getAttribute('src');
-                if (src && src === base64Data) {
-                    el.setAttribute('src', ggUrl);
-                } else {
-                    const backgroundImage = el.style.backgroundImage;
-                    if (backgroundImage && backgroundImage.includes(base64Data)) {
-                        el.style.backgroundImage = ggUrl;
-                    }
-                }
-            });
+            reupBase64ToUrl(base64Data, ggUrl);
         }
     }
+}
+
+function reupBase64ToUrl(base64Data, Url, id) {
+    document.querySelectorAll('[src], [style]').forEach((el) => {
+        const src = el.getAttribute('src');
+        if (src && src === base64Data) {
+            el.setAttribute('src', Url);
+            if (id) el.parentElement.setAttribute('imgid', id);
+        } else {
+            const backgroundImage = el.style.backgroundImage;
+            if (backgroundImage && backgroundImage.includes(base64Data)) {
+                el.style.backgroundImage = Url;
+                if (id) el.parentElement.setAttribute('imgid', id);
+            }
+        }
+    });
 }
 
 document.addEventListener('paste', async (e) => {
@@ -715,11 +720,9 @@ imageSearchInput.addEventListener('input', () => {
 
 removeImageBtn.addEventListener('click', async () => {
     const selected = document.querySelector('.image-item-bar.selected');
-    const alt = selected.querySelector('div').textContent;
-    const date = selected.closest('.image-date-bar').getAttribute('data-date');
-    const id = `${alt} - ${date}`;
     if (selected) {
         const oldFileIdMatch = selected.querySelector('img').src.match(/[-\w]{25,}/);
+        const id = selected.getAttribute('imgid');
         selected.remove();
         imageDict.remove(id);
         imageDict.save();
@@ -773,10 +776,7 @@ setUserImg.addEventListener('click', () => {
 
 loadImageInput.addEventListener('change', async () => {
     const files = loadImageInput.files;
-    
-    // Nếu người dùng ấn Cancel không chọn ảnh thì dừng lại
     if (files.length === 0) return;
-    openLoadingBar();
 
     const date = new Date().toISOString().split('T')[0];
     const dateStrFirst = new Date(date).toString().split(' ').slice(0, 1)
@@ -795,13 +795,9 @@ loadImageInput.addEventListener('change', async () => {
     }
 
     const itemsContent = dateContent.querySelector('.image-content-bar');
+    let imgLength = 1;
 
-    // Lặp qua từng file đã chọn
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        setLoadingBarValue(0, `Đang xử lý ảnh ${i + 1}/${files.length}... `);
-
-        // Bọc FileReader trong Promise để chờ đọc xong mới đi tiếp
+    [...files].forEach(async (file) => {
         const base64Data = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result);
@@ -810,102 +806,44 @@ loadImageInput.addEventListener('change', async () => {
         });
 
         if (base64Data && base64Data.startsWith('data:image')) {
-            // Chạy hiệu ứng thanh tải
-            playRunForTimeToLoop((count) => { 
-                setLoadingBarValue(count, `Đang tải ảnh ${i + 1}/${files.length}... - `); 
-            }, 100, 100);
-            
-            // Upload ảnh lên Drive
-            let id, img;
-            const hash = await createHash(base64Data);
-            if (imageHaseDict[hash]) {
-                id = imageHaseDict[hash].id;
-                img = imageHaseDict[hash].url;
-            } else {
-                id = `${file.name} - ${date}`
-                const driveUrl = await uploadImageToDrive(base64Data, file.name);
-                const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
-                const imgId = fileIdMatch ? fileIdMatch[0] : '';
-                img = `https://lh3.googleusercontent.com/u/0/d/${imgId}=s400`;
-                imageHaseDict[hash] = { id, url: img };
-            }
+            let id = `${file.name} - ${Date.now()}`;
 
-            setLoadingBarValue(100, `Hoàn tất ảnh ${i + 1}... `);
-
-            // Thêm vào dữ liệu
             const newItem = {
                 name: file.name,
-                img: img,
+                img: base64Data,
                 date: date,
-                id: id,
-                hash: hash
+                id: id
             };
 
-            const imageDiv = document.createElement('div');
-            imageDiv.classList.add('image-item-bar');
-            imageDiv.title = newItem.name;
-            imageDiv.innerHTML = `<img src="${newItem.img}" alt="${newItem.name}">`;
-            itemsContent.appendChild(imageDiv);
-
-            const imageName = document.createElement('div');
-            imageName.textContent = newItem.name;
-            imageDiv.appendChild(imageName);
-
-            imageName.addEventListener('dblclick', () => {
-                imageName.contentEditable = true;
-                imageName.classList.add('editable');
-            });
-
-            imageName.addEventListener('blur', () => {
-                imageName.contentEditable = false;
-                newItem.name = imageName.textContent;
-                imageDiv.title = newItem.name;
-                imageDict.set(newItem.id, newItem);
-                imageDict.save();
-                imageName.classList.remove('editable');
-            });
-
-            imageName.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    imageName.contentEditable = false;
-                    newItem.name = imageName.textContent;
-                    imageDiv.title = newItem.name;
-                    imageDict.set(newItem.id, newItem);
-                    imageDict.save();
-                    imageName.classList.remove('editable');
+            createHash(base64Data).then(hash => {
+                if (imageHaseDict[hash]) {
+                    reupBase64ToUrl(base64Data, imageHaseDict[hash].url, id = imageHaseDict[hash].id)
+                } else {
+                    uploadImageToDrive(base64Data, file.name).then(driveUrl => {
+                        const fileIdMatch = driveUrl.match(/[-\w]{25,}/);
+                        const imgId = fileIdMatch ? fileIdMatch[0] : '';
+                        newItem.img = `https://lh3.googleusercontent.com/u/0/d/${imgId}=s400`;
+                        newItem.hash = hash;
+                        imageHaseDict[hash] = { id, url: newItem.img };
+                        imageDict.set(`${newItem.id}`, newItem);
+                        imageDict.save();
+                        reupBase64ToUrl(base64Data, newItem.img);
+                    })
                 }
-            });
-
-            let pressTimer;
-            imageName.addEventListener('touchstart', () => {
-                pressTimer = setTimeout(() => {
-                    imageName.contentEditable = true;
-                    imageName.classList.add('editable');
-                }, 500);
-            });
-
-            imageName.addEventListener('touchend', () => {
-                clearTimeout(pressTimer);
-            });
-
-            imageName.addEventListener('touchmove', () => {
-                clearTimeout(pressTimer);
-            });
-
-            imageDiv.addEventListener('click', () => {
-                // Xóa selected class cơ bản
-                const selected = document.querySelector('.image-item-bar.selected');
-                if (selected) { selected.classList.remove('selected'); }
-
-                imageDiv.classList.add('selected');
             })
 
-            imageDict.set(`${newItem.id}`, newItem);
+            const itemDiv = document.createElement('div');
+            itemDiv.classList.add('image-item-bar');
+            itemDiv.setAttribute('title', newItem.name);
+            itemDiv.setAttribute('imgid', newItem.id);
+            itemDiv.innerHTML = `
+                <img src="${newItem.img}" alt="${newItem.name}">
+                <div class="image-item-bar-name">${newItem.name}</div>
+            `;
+            itemsContent.appendChild(itemDiv);
         }
-    }
+    });
 
-    imageDict.save();
-    closeLoadingBar();
     loadImageInput.value = ''; 
 });
 
@@ -1267,7 +1205,7 @@ function addCmtToCmtPanel(panel, cmt, index) {
         // Lưu dữ liệu
         spData.cmts[index] = cmt; // Giả sử 'index' đã có ở scope bên ngoài
         sheetData.set(spid, spData);
-        debouncedSaveSheet();
+        sheetData.save();
     });
 
     // SỰ KIỆN BẤM DISLIKE
@@ -1293,7 +1231,7 @@ function addCmtToCmtPanel(panel, cmt, index) {
         // Lưu dữ liệu
         spData.cmts[index] = cmt;
         sheetData.set(spid, spData);
-        debouncedSaveSheet();
+        sheetData.save();
     });
 
     const setupCmtevent = () => openSetupCmtMenu(setupCmt, (st) => {
@@ -1319,14 +1257,14 @@ function addCmtToCmtPanel(panel, cmt, index) {
                 cmtComment.innerHTML = newContent;
                 spData.cmts[index] = cmt;
                 sheetData.set(spid, spData);
-                debouncedSaveSheet();
+                sheetData.save();
             })
         } else if (st === 'delete') {
             activeSetupCmt.style.display = 'none';
             cmtDiv.remove();
             spData.cmts.splice(index, 1);
             sheetData.set(spid, spData);
-            debouncedSaveSheet();
+            sheetData.save();
         }
     });
 
@@ -1567,7 +1505,7 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
         addSpMenu.style.display = 'none';
         document.getElementById('app').inert = false;
         sheetData.set(newItems.id, newItems);
-        debouncedSaveSheet();
+        sheetData.save();
     } else {
         const sl = Object.fromEntries([...addSpMenu.querySelectorAll('.add-sp-item')].map(item => [
             item.querySelector('input[type="text"]').value,
@@ -1592,7 +1530,7 @@ addSpMenuApplyBtn.addEventListener('click', async () => {
         updateMainItem(newItems.id, newItems)
         sheetData.remove(openSpMenuStyle);
         sheetData.set(newItems.id, newItems);
-        debouncedSaveSheet();
+        sheetData.save();
     }
 
     resizeEvent();
