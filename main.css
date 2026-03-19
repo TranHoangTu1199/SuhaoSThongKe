@@ -457,6 +457,19 @@ select {
     border-radius: var(--border-radius);
 }
 
+.main-item-cmt-length {
+    font-weight: normal;
+    font-size: calc(var(--panel-size) * 0.037);
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    width: auto;
+    height: var(--btn-panel-size);
+    border-radius: var(--border-radius);
+    color: #0000008f;
+}
+
 .main-item-edit-btn {
     width: var(--btn-panel-size);
     height: var(--btn-panel-size);

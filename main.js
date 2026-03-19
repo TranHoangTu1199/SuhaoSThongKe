@@ -932,6 +932,11 @@ function addMainItem(id, item) {
     btns.classList.add('main-item-btns');
     content.appendChild(btns);
 
+    const cmtLengthBox = document.createElement('p');
+    cmtLengthBox.classList.add('main-item-cmt-length');
+    cmtLengthBox.textContent = item.cmts.length;
+    btns.appendChild(cmtLengthBox);
+
     const cmtBtn = document.createElement('div');
     cmtBtn.classList.add('main-item-cmt-btn');
     btns.appendChild(cmtBtn);
@@ -1012,6 +1017,8 @@ function addMainItem(id, item) {
 
         repInput.value = '';
         limgbar?.remove();
+        cmtLengthBox.textContent = item.cmts.length;
+        firstBarClone.querySelector('.main-item-cmt-length').textContent = item.cmts.length;
     })
 
     let isCmtOpen = false;
@@ -1284,6 +1291,10 @@ function addCmtToCmtPanel(panel, cmt, index) {
             })
         } else if (st === 'delete') {
             activeSetupCmt.style.display = 'none';
+            const parent = cmtDiv.parentElement.parentElement.parentElement
+            const spid = parent.getAttribute('spid');
+            parent.querySelector('.main-item-cmt-length').textContent = spData.cmts.length - 1;
+            mainPanel.querySelector(`.main-item[spid="${spid}"] .main-item-cmt-length`).textContent = spData.cmts.length - 1;
             cmtDiv.remove();
             spData.cmts.splice(index, 1);
             sheetData.set(spid, spData);
