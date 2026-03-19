@@ -495,14 +495,14 @@ function updateMainItem(id, item) {
             kn = Math.abs(endIndex - startIndex ) + 1;
         }
         const sl = parseInt(value) * kn;
-        loadSL += `- ${key}: ${value} / ${sizeloop * sl}<br>`;
+        loadSL += `- ${key.replace('-', '&#8594;')}: ${value} / ${sizeloop * sl}<br>`;
         tong += sl;
     }
     loadSL += `Tổng: ${tong} / ${sizeloop * tong}<br>`;
 
     const thongtin = `
     Ngày: ${item.date}<br>
-    &#60; ${item.size} &#62;<br><br>
+    &#60; ${item.size.replace('-', '&#8594;')} &#62;<br><br>
     ${loadSL}<br>
     <span style="font-weight: bold;" class="main-item-code">#${item.code}<br></span>
     <span style="color: red;">- ${item.actor}<br>
@@ -912,7 +912,7 @@ function addMainItem(id, item) {
             kn = Math.abs(endIndex - startIndex ) + 1;
         }
         const sl = parseInt(value) * kn;
-        loadSL += `- ${key}: ${value} / ${sizeloop * sl}<br>`;
+        loadSL += `- ${key.replace('-', '&#8594;')}: ${value} / ${sizeloop * sl}<br>`;
         tong += sl;
     }
     loadSL += `Tổng: ${tong} / ${sizeloop * tong}<br>`;
@@ -921,7 +921,7 @@ function addMainItem(id, item) {
     thongtin.classList.add('main-item-thongtin');
     thongtin.innerHTML = `
     Ngày: ${item.date}<br>
-    &#60; ${item.size} &#62;<br><br>
+    &#60; ${item.size.replace('-', '&#8594;')} &#62;<br><br>
     ${loadSL}<br>
     <span style="font-weight: bold;" class="main-item-code">#${item.code}<br></span>
     <span style="color: red;">- ${item.actor}<br>
