@@ -143,7 +143,7 @@ export class LoadDataForDict {
         }
     }
 
-    addChangeSheetCallback(key, callback, timeout = 700) {
+    addChangeSheetCallback(key, callback, timeout = 5000) {
         if (this.activeTimers[key]) return; 
         
         this.activeTimers[key] = true;
@@ -153,7 +153,7 @@ export class LoadDataForDict {
             if (!this.activeTimers[key]) return;
 
             // SỬA LỖI 1: Nếu đang lưu (saving) thì KHÔNG return, chỉ BỎ QUA đoạn lấy dữ liệu
-            if (!this.isSaving && !this.loadSheeting) {
+            if (!this.isSaving && !this.loadSheeting && !document.hidden) {
                 try {
                     this.loadSheeting = true;
                     const data = await GetData(this.URL, this.page);
