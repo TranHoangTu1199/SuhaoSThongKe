@@ -1302,6 +1302,7 @@ select {
     cursor: pointer;
     color: #242424;
     margin-left: calc(var(--panel-size) * 0.015);
+    height: calc(var(--panel-size) * 0.045);
     width: calc(var(--panel-size) * 0.07);
     text-align: center;
     justify-content: top;

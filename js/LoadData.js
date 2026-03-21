@@ -50,6 +50,7 @@ export class LoadDataForDict {
         const getData = await idb.get(this.page);
         if (getData) {
             this.data = JSON.parse(getData)
+            this.oldData = getData;
         } else {
             const data = await GetData(this.URL, this.page);
             if (data[0][0] === '') return;
@@ -160,13 +161,8 @@ export class LoadDataForDict {
                     const newData = Object.fromEntries(data);
                     const newDataString = JSON.stringify(newData);
 
-                    // Xử lý lần gọi đầu tiên
-                    if (this.oldData === null) {
-                        this.oldData = newDataString;
-                        this.data = newData; 
-                    } 
                     // Xử lý khi có thay đổi thực sự
-                    else if (newDataString !== this.oldData) {
+                    if (newDataString !== this.oldData) {
                         const oldDataObject = JSON.parse(this.oldData);
                         this.oldData = newDataString;
                         this.data = newData;

@@ -519,6 +519,8 @@ function updateMainItem(id, item) {
     item.cmts.forEach((cmt, index) => {
         addCmtToCmtPanel(cmtPanel, cmt, index);
     });
+
+    mainItem.querySelector('.main-item-cmt-length').textContent = item.cmts.length;
 }
 
 playRunForTime(() => {
