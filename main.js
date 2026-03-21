@@ -581,14 +581,18 @@ document.addEventListener('click', (e) => {
     }
 })
 
+let outTgText = null;
 const imgForcutIn = (tg) => {
     tg.contentEditable = true;
     tg.classList.add('editable');
+    outTgText = tg.textContent;
 }
 
 const imgForcutOut = (tg) => {
     tg.contentEditable = false;
     tg.classList.remove('editable');
+    tg.scrollLeft = 0;
+    if (outTgText === tg.textContent) return;
     const parent = tg.parentElement;
     parent.title = tg.textContent;
     const id = parent.getAttribute('imgid');
@@ -1585,5 +1589,48 @@ document.addEventListener('DOMContentLoaded', () => {
         setLoadingBarValue(count, "Setting up data... ");
     }, 50, 100);
 });
+
+let isTypeTextSelecting = false;
+let mousePos = { x: 0, y: 0 };
+const scrollSpeed = 15;
+
+document.addEventListener('mousedown', (e) => {
+    const taget = e.target;
+    if (taget.getAttribute('contenteditable') === 'true') {
+        isTypeTextSelecting = true;
+    }
+})
+
+document.addEventListener('mouseup', (e) => {
+    isTypeTextSelecting = false;
+})
+
+document.addEventListener('mousemove', (e) => {
+    const taget = e.target;
+    if (taget.getAttribute('contenteditable') === 'true' && isTypeTextSelecting) {
+        mousePos = { x: e.clientX, y: e.clientY };
+        autoScroll(taget);
+    }
+})
+
+function autoScroll(taget) {
+    if (!isTypeTextSelecting) return;
+    let isAtEdge = false;
+
+    const tagetPos = taget.getBoundingClientRect();
+    if (mousePos.x < tagetPos.left + 5) {
+        taget.scrollLeft -= scrollSpeed;
+        isAtEdge = true;
+    } else if (mousePos.x > tagetPos.right - 5) {
+        taget.scrollLeft += scrollSpeed;
+        isAtEdge = true;
+    }
+
+    if (isAtEdge) {
+        setTimeout(() => {
+            autoScroll(taget);
+        }, 100);
+    }
+}
 
 window.addEventListener('resize', resizeEvent);
