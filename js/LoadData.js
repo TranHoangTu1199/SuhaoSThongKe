@@ -1,3 +1,5 @@
+import * as idb from 'https://cdn.jsdelivr.net/npm/idb-keyval@6/+esm';
+
 export async function SetData(data, URL, page = "Sheet1") {
     try {
         const jsonData = JSON.stringify(data);
@@ -32,73 +34,6 @@ export async function GetData(URL, page = "Sheet1") {
     }
 }
 
-const cols = {
-    date: 0,
-    sl: 1,
-    code: 2,
-    name: 3,
-    size: 4,
-    fashion: 5,
-    style: 6,
-    image: 7,
-    id: 8
-}
-
-export class LoadDataForList {
-    constructor(URL, page = "Sheet1") {
-        this.data = [];
-        this.URL = URL;
-        this.page = page;
-    }
-
-    // Gọi hàm này ngay sau khi khởi tạo class để tải dữ liệu một cách an toàn
-    async init() {
-        this.data = await GetData(this.URL, this.page);
-    }
-
-    insert(index, value) {
-        this.data.splice(index, 0, value);
-    }
-
-    push(value) {
-        this.data.push(value);
-    }
-
-    remove(index) {
-        this.data.splice(index, 1);
-    }
-
-    get(col, row) {
-        const rowData = this.data[row];
-        if (!rowData) return undefined;
-
-        const colIndex = (typeof col === 'string') ? cols[col] : col;
-        return (colIndex !== undefined) ? rowData[colIndex] : undefined;
-    }
-
-    set(col, row, value) {
-        if (!this.data[row]) return; // Kiểm tra an toàn
-
-        if (typeof col === 'string') {
-            const colIndex = cols[col];
-            // Sửa lỗi: Kiểm tra rõ ràng với undefined
-            if (colIndex !== undefined) {
-                this.data[row][colIndex] = value; // Sửa lỗi: dùng colIndex thay vì col
-            }
-        } else if (typeof col === 'number') {
-            this.data[row][col] = value;
-        }
-    }
-
-    async save() {
-        await SetData(this.data, this.URL, this.page);
-    }
-
-    clear() {
-        this.data = [];
-    }
-}
-
 export class LoadDataForDict {
     constructor(URL, page = "Setup") {
         this.data = {};
@@ -112,9 +47,15 @@ export class LoadDataForDict {
     }
 
     async init() {
-        const data = await GetData(this.URL, this.page);
-        if (data[0][0] === '') return;
-        this.data = Object.fromEntries(data);
+        const getData = await idb.get(this.page);
+        if (getData) {
+            this.data = JSON.parse(getData)
+        } else {
+            const data = await GetData(this.URL, this.page);
+            if (data[0][0] === '') return;
+            this.data = Object.fromEntries(data);
+            this.save();
+        }
     }
 
     clear() {
@@ -138,6 +79,7 @@ export class LoadDataForDict {
 
             try {
                 const dataArray = Object.entries(this.data);
+                idb.set(this.page, JSON.stringify(this.data));
                 await SetData(dataArray, this.URL, this.page);
             } catch (error) {
                 console.error("Lỗi mất mạng khi lưu:", error);
@@ -228,6 +170,7 @@ export class LoadDataForDict {
                         const oldDataObject = JSON.parse(this.oldData);
                         this.oldData = newDataString;
                         this.data = newData;
+                        idb.set(this.page, newDataString);
                         callback(this.data, oldDataObject);
                     }
                 } catch (error) {

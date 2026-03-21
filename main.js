@@ -1,4 +1,4 @@
-import { LoadDataForDict, LoadDataForList, uploadImageToDrive, deleteImageFromDrive } from './js/LoadData.js';
+import { LoadDataForDict, uploadImageToDrive, deleteImageFromDrive } from './js/LoadData.js';
 import { LoginUser } from './js/LogUser.js';
 //set innit width/height for css
 const initWidth = window.innerWidth;
