@@ -98,40 +98,11 @@ export class LoadDataForDict {
 
     get(key) {
         const value = this.data[key];
-        
-        // Kiểm tra nếu giá trị không tồn tại hoặc không phải là string
-        if (value === undefined || value === null || typeof value !== 'string') {
-            return value;
-        }
-
-        // Kiểm tra định dạng JSON
-        const isJson = (value.startsWith('{') && value.endsWith('}')) || (value.startsWith('[') && value.endsWith(']'));
-
-        if (isJson) {
-            try {
-                return JSON.parse(value);
-            } catch (e) {
-                console.error('Lỗi khi phân tích JSON tại key:', key, e);
-                return value;
-            }
-        } 
-        
-        // Xử lý boolean
-        if (value === 'TRUE' || value === 'FALSE' || value === 'true' || value === 'false') {
-            return value === 'TRUE' || value === 'true';
-        }
-
-        return value;
+        return JSON.parse(value);
     }
 
     set(key, value) {
-        if (typeof value === 'object') {
-            this.data[key] = JSON.stringify(value);
-        } else if (typeof value === 'boolean') {
-            this.data[key] = value.toString();
-        } else {
-            this.data[key] = value;
-        }
+        this.data[key] = JSON.stringify(value);
     }
 
     check(key) {
@@ -140,11 +111,11 @@ export class LoadDataForDict {
 
     forEach(callback) {
         for (const [key, value] of Object.entries(this.data)) {
-            callback(key, value);
+            callback(key, JSON.parse(value));
         }
     }
 
-    addChangeSheetCallback(key, callback, timeout = 5000) {
+    addChangeSheetCallback(key, callback, timeout = 2000) {
         if (this.activeTimers[key]) return; 
         
         this.activeTimers[key] = true;

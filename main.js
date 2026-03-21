@@ -389,7 +389,7 @@ function upSheetData() {
     sheetData.forEach((id, itemString) => {
         tempItems.push({
             id: id,
-            itemData: JSON.parse(itemString)
+            itemData: itemString
         });
     });
 
@@ -537,13 +537,12 @@ function updateImageData() {
     let dateDict = {};
     let dateList = [];
     imageDict.forEach((key, value) => {
-        const vl = JSON.parse(value);
-        if (!dateDict[vl.date]) { 
-            dateDict[vl.date] = [];
-            dateList.push(vl.date);
+        if (!dateDict[value.date]) { 
+            dateDict[value.date] = [];
+            dateList.push(value.date);
         }
-        vl.id = key;
-        dateDict[vl.date].push(vl);
+        value.id = key;
+        dateDict[value.date].push(value);
     });
 
     dateList.sort((a, b) => {
@@ -714,9 +713,8 @@ document.addEventListener('paste', async (e) => {
 imageDict.init().then(() => {
     updateImageData();
     imageDict.forEach((key, value) => {
-        const vl = JSON.parse(value);
-        if (vl.hash) {
-            imageHaseDict[vl.hash] = { id: key, url: vl.img }
+        if (value.hash) {
+            imageHaseDict[value.hash] = { id: key, url: value.img }
         };
     })
 });

@@ -92,12 +92,11 @@ export class LoginUser {
     login(user, pass) {
         if (!user || !pass) return;
         this.userData.forEach((key, value) => {
-            const vl = JSON.parse(value);
-            if (vl.username === user && vl.password === pass) {
+            if (value.username === user && value.password === pass) {
                 this.user = user;
                 this.pass = pass;
                 this.loging = true;
-                this.avt = vl.avt;
+                this.avt = value.avt;
                 this.id = key;
             }
         })
