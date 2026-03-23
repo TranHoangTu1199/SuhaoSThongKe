@@ -64,23 +64,23 @@ export class LoadDataForDict {
     }
 
     save(timeout = 500) {
-        // 1. CHỐNG SPAM CLICK/GÕ (Debounce tuyệt hảo của bạn)
         clearTimeout(this.saveTimer);
         this.saveTimer = setTimeout(async () => {
             
             // 2. KHÓA BẢO VỆ MẠNG (Chống 2 cục data tông nhau trên đường truyền)
             if (this.isSaving) {
                 console.log("Mạng đang kẹt cục data trước, hẹn lại tí nữa lưu...");
-                this.save(timeout); // Gọi lại chính nó để đặt lại đồng hồ
+                this.save(timeout);
                 return;
             }
 
-            // Khóa cửa lại để bắt đầu đẩy data lên mạng
             this.isSaving = true;
 
             try {
                 const dataArray = Object.entries(this.data);
-                idb.set(this.page, JSON.stringify(this.data));
+                const dataString = JSON.stringify(this.data);
+                idb.set(this.page, dataString);
+                this.oldData = dataString;
                 await SetData(dataArray, this.URL, this.page);
             } catch (error) {
                 console.error("Lỗi mất mạng khi lưu:", error);
@@ -102,6 +102,10 @@ export class LoadDataForDict {
     }
 
     set(key, value) {
+        if (!value) {
+            console.error('Invalid value for key:', key);
+            return;
+        }
         this.data[key] = JSON.stringify(value);
     }
 
