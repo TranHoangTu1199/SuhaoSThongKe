@@ -147,10 +147,7 @@ export class LoadDataForDict {
                 }
             }
 
-            // Dù lúc nãy có bỏ qua vì đang saving hay không, vẫn phải đặt lịch cho chu kỳ tiếp theo
-            if (this.activeTimers[key]) {
-                setTimeout(poll, timeout);
-            }
+            if (this.activeTimers[key]) setTimeout(poll, timeout);
         };
 
         poll();
@@ -162,7 +159,6 @@ const imageUploadURL = 'https://script.google.com/macros/s/AKfycbz0VtXmUmGQkGWvU
 export async function uploadImageToDrive(base64String, fileName) {
     const response = await fetch(imageUploadURL, {
         method: 'POST',
-        // Trick: Dùng text/plain để Apps Script không chặn lỗi CORS
         headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
         body: JSON.stringify({
             base64: base64String,
@@ -181,7 +177,6 @@ export async function uploadImageToDrive(base64String, fileName) {
 export async function deleteImageFromDrive(fileId) {
     const response = await fetch(imageUploadURL, {
         method: 'POST',
-        // Trick: Dùng text/plain để Apps Script không chặn lỗi CORS
         headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
         body: JSON.stringify({
             deleteFileId: fileId
